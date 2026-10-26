@@ -1,0 +1,1430 @@
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  min-width: 0;
+  background: #f4f5f2;
+}
+
+.gis-shell {
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr);
+  width: 100%;
+  height: 100dvh;
+  color: #26342d;
+  background: #f7f7f5;
+}
+
+.gis-left-sidebar {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid #d8ddd9;
+  background: #f0f2ef;
+}
+
+.gis-brand {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid #d8ddd9;
+}
+
+.gis-brand-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  color: white;
+  border-radius: 8px;
+  background: #183d32;
+  box-shadow: 0 5px 14px rgba(24, 61, 50, 0.18);
+}
+
+.gis-brand > div:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gis-brand strong {
+  color: #24322b;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.gis-brand span {
+  margin-top: 3px;
+  color: #7c8982;
+  font:
+    600 9px "Space Grotesk",
+    sans-serif;
+  letter-spacing: 0.09em;
+}
+
+.gis-sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 10px 18px;
+}
+
+.gis-sidebar-scroll .primary-nav {
+  gap: 3px;
+}
+
+.gis-sidebar-scroll .primary-nav button {
+  min-height: 39px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+
+.gis-sidebar-scroll .primary-nav button.active {
+  color: #174d3b;
+  border-color: #cbd9d1;
+  background: #e5eee9;
+  box-shadow: inset 3px 0 0 #24775a;
+}
+
+.gis-sidebar-scroll .side-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #dbe0dc;
+}
+
+.gis-sidebar-scroll .section-label {
+  margin-left: 7px;
+  font-size: 10px;
+}
+
+.gis-sidebar-scroll .dataset-card {
+  padding: 11px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.gis-sidebar-scroll .dataset-metrics strong {
+  font-size: 19px;
+}
+
+.gis-sidebar-scroll .architecture-note {
+  margin-top: 18px;
+  border-radius: 7px;
+}
+
+.gis-sidebar-footer {
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 15px;
+  border-top: 1px solid #d8ddd9;
+  background: #ecefec;
+}
+
+.service-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #c28d3f;
+}
+
+.service-dot.online {
+  background: #188460;
+  box-shadow: 0 0 0 4px rgba(24, 132, 96, 0.11);
+}
+
+.gis-sidebar-footer div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gis-sidebar-footer b {
+  color: #415048;
+  font-size: 10px;
+}
+
+.gis-sidebar-footer small {
+  margin-top: 2px;
+  color: #8a948e;
+  font-size: 9px;
+}
+
+.gis-main-stage {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 68px auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.gis-topbar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 10px 20px;
+  border-bottom: 1px solid #dfe3e0;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.gis-page-title h1 {
+  max-width: none;
+  margin: 3px 0 0;
+  color: #26322c;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.gis-page-title .eyebrow {
+  color: #75847c;
+  font-size: 9px;
+}
+
+.gis-topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gis-topbar-meta span {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  color: #68756e;
+  border: 1px solid #e0e5e1;
+  border-radius: 6px;
+  background: #f7f9f7;
+  font-size: 10px;
+}
+
+.gis-main-stage > .global-error {
+  margin: 8px 12px 0;
+}
+
+.gis-module-host {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.regeneration-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.map-workspace {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 48px minmax(260px, 1fr) 28px auto;
+  overflow: hidden;
+  background: #e8ece9;
+}
+
+.map-toolbar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 11px 7px 14px;
+  border-bottom: 1px solid #d9dedb;
+  background: #ffffff;
+}
+
+.map-title {
+  min-width: 210px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #184a39;
+}
+
+.map-title div {
+  display: flex;
+  flex-direction: column;
+}
+
+.map-title strong {
+  color: #2b3931;
+  font-size: 11px;
+}
+
+.map-title span {
+  margin-top: 2px;
+  color: #8a948e;
+  font-size: 9px;
+}
+
+.map-view-toggle {
+  height: 31px;
+  display: inline-flex;
+  border: 1px solid #d6ddd8;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #f5f7f5;
+}
+
+.map-view-toggle button {
+  min-width: 68px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 9px;
+  color: #66736b;
+  border: 0;
+  border-right: 1px solid #d6ddd8;
+  background: transparent;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.map-view-toggle button:last-child {
+  border-right: 0;
+}
+
+.map-view-toggle button.active {
+  color: white;
+  background: #285a47;
+}
+
+.scenario-filter {
+  height: 31px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 8px;
+  color: #657269;
+  border: 1px solid #d6ddd8;
+  border-radius: 5px;
+  background: #f8faf8;
+}
+
+.scenario-filter select {
+  height: 29px;
+  padding: 0 24px 0 2px;
+  color: #3f4f46;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 10px;
+}
+
+.feature-count {
+  margin-left: auto;
+  color: #7c8982;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.map-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #e8ece9;
+}
+
+.regeneration-map {
+  position: absolute;
+  inset: 0;
+}
+
+.matrix-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 24px;
+  background: #f8faf8;
+}
+
+.matrix-stage .matrix-wrap {
+  width: min(860px, 92%);
+  max-width: none;
+}
+
+.matrix-stage .matrix {
+  max-height: 560px;
+}
+
+.map-empty-message,
+.map-empty-overlay,
+.map-loading {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 5;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 22px;
+  color: #6b7a72;
+  border: 1px solid rgba(210, 220, 214, 0.95);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 28px rgba(32, 48, 39, 0.12);
+  text-align: center;
+  pointer-events: none;
+}
+
+.map-empty-overlay svg {
+  color: #257354;
+}
+
+.map-empty-overlay strong,
+.map-loading strong {
+  color: #33443a;
+  font-size: 12px;
+}
+
+.map-empty-overlay span,
+.map-loading span {
+  color: #7d8982;
+  font-size: 10px;
+}
+
+.map-loading {
+  z-index: 9;
+}
+
+.map-loading i {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #cfddd5;
+  border-top-color: #1d7456;
+  border-radius: 50%;
+  animation: map-spin 0.8s linear infinite;
+}
+
+@keyframes map-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.map-legend-panel {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 11px;
+  max-width: calc(100% - 150px);
+  padding: 8px 10px;
+  color: #4f5d55;
+  border: 1px solid rgba(207, 216, 211, 0.92);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 3px 14px rgba(31, 48, 39, 0.09);
+  font-size: 9px;
+}
+
+.map-legend-panel span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.map-legend-panel i,
+.scenario-dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  flex: 0 0 8px;
+  border: 1px solid rgba(32, 50, 40, 0.22);
+  border-radius: 50%;
+}
+
+.map-statusbar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 10px;
+  color: #7d8882;
+  border-top: 1px solid #d8ddda;
+  border-bottom: 1px solid #d8ddda;
+  background: #f5f6f4;
+  font-size: 8px;
+}
+
+.map-statusbar span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.map-statusbar .status-ready {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1c825f;
+}
+
+.map-statusbar button {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: #536159;
+  border: 0;
+  background: transparent;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.attribute-drawer {
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  background: white;
+}
+
+.attribute-drawer.open {
+  height: 218px;
+  display: flex;
+  flex-direction: column;
+}
+
+.attribute-header {
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #e0e4e1;
+}
+
+.attribute-header div {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.attribute-header strong {
+  color: #37443d;
+  font-size: 11px;
+}
+
+.attribute-header span {
+  color: #89928d;
+  font-size: 9px;
+}
+
+.attribute-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.attribute-table-scroll table {
+  min-width: 920px;
+  font-size: 9px;
+}
+
+.attribute-table-scroll th {
+  z-index: 2;
+  padding: 7px 9px;
+  color: #68746d;
+  background: #f3f5f3;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.attribute-table-scroll td {
+  padding: 6px 9px;
+  color: #536058;
+  border-top-color: #ecefec;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.attribute-table-scroll tbody tr:hover td,
+.attribute-table-scroll tbody tr.selected td {
+  background: #eef4f0;
+}
+
+.attribute-table-scroll td b {
+  color: #344139;
+  font-size: 9px;
+}
+
+.attribute-table-scroll .scenario-dot {
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+.attribute-table-scroll .rank {
+  color: #b7673f;
+  font-size: 10px;
+}
+
+.table-empty {
+  height: 90px;
+  color: #929b96 !important;
+  text-align: center;
+}
+
+.analysis-sidebar {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid #d8ddda;
+  background: #ffffff;
+}
+
+.analysis-header {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 13px 6px 15px;
+  color: #68756e;
+  border-bottom: 1px solid #dfe3e0;
+}
+
+.analysis-header h2 {
+  margin: 2px 0 0;
+  color: #2f3c35;
+  font-size: 14px;
+}
+
+.analysis-header .eyebrow {
+  color: #87928c;
+  font-size: 8px;
+}
+
+.analysis-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #b7c8bf transparent;
+}
+
+.analysis-card {
+  margin-bottom: 9px;
+  padding: 11px;
+  border: 1px solid #e0e5e1;
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.analysis-card h3 {
+  margin: 0 0 9px;
+  color: #4d5c54;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.parameter-card label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.parameter-card label > span {
+  display: flex;
+  justify-content: space-between;
+  color: #68766e;
+  font-size: 9px;
+}
+
+.parameter-card label b {
+  color: #1b7053;
+}
+
+.parameter-card input[type="range"] {
+  width: 100%;
+  margin: 6px 0 0;
+}
+
+.run-analysis-button {
+  width: 100%;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: white;
+  border: 0;
+  border-radius: 6px;
+  background: #183d32;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.run-analysis-button:hover:not(:disabled) {
+  background: #245345;
+}
+
+.run-analysis-button:disabled {
+  color: #929a95;
+  background: #d5dad7;
+  cursor: default;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.summary-grid div {
+  padding: 8px;
+  border: 1px solid #e6eae7;
+  border-radius: 5px;
+  background: #f7f9f7;
+}
+
+.summary-grid span {
+  display: block;
+  color: #7e8983;
+  font-size: 8px;
+}
+
+.summary-grid strong {
+  display: block;
+  margin-top: 4px;
+  color: #173c31;
+  font:
+    600 16px "Space Grotesk",
+    sans-serif;
+}
+
+.average-bars {
+  display: grid;
+  gap: 9px;
+  margin-top: 11px;
+}
+
+.average-bars > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  color: #77827c;
+  font-size: 8px;
+}
+
+.average-bars b {
+  color: #405048;
+}
+
+.average-bars i {
+  grid-column: 1 / -1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf1ee;
+}
+
+.average-bars em {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1d7658, #75ad97);
+}
+
+.scenario-summary-list {
+  display: grid;
+  gap: 3px;
+}
+
+.scenario-summary-list button {
+  min-height: 27px;
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 6px;
+  color: #59675f;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 9px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scenario-summary-list button:hover {
+  background: #f0f4f1;
+}
+
+.scenario-summary-list i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.scenario-summary-list strong {
+  color: #35443c;
+  font-size: 9px;
+}
+
+.analysis-empty {
+  margin: 0;
+  color: #8a948f;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.selection-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.selection-title div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.selection-title b {
+  overflow: hidden;
+  color: #34433b;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selection-title span {
+  margin-top: 3px;
+  color: #89938e;
+  font-size: 8px;
+}
+
+.selection-title em {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.selection-card dl {
+  margin: 0;
+}
+
+.selection-card dl div {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 7px;
+  padding: 6px 0;
+  border-top: 1px solid #edf0ee;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.selection-card dt {
+  color: #849089;
+}
+
+.selection-card dd {
+  margin: 0;
+  color: #47564e;
+  overflow-wrap: anywhere;
+}
+
+.export-card a {
+  min-height: 31px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #245e49;
+  font-size: 9px;
+  text-decoration: none;
+}
+
+.regeneration-popup {
+  min-width: 190px;
+  display: grid;
+  gap: 6px;
+  color: #2d3c33;
+  font:
+    10px/1.4 "Noto Sans SC",
+    "Microsoft YaHei",
+    sans-serif;
+}
+
+.regeneration-popup > strong {
+  color: #173d30;
+  font-size: 12px;
+}
+
+.regeneration-popup > b {
+  padding: 4px 6px;
+  color: #1e654a;
+  border-radius: 4px;
+  background: #eaf3ed;
+}
+
+.regeneration-popup > div {
+  display: grid;
+  grid-template-columns: 55px minmax(0, 1fr);
+  gap: 6px;
+  padding-top: 4px;
+  border-top: 1px solid #e6ebe7;
+}
+
+.regeneration-popup span {
+  color: #7a867f;
+  font-size: 8px;
+}
+
+.regeneration-popup p {
+  margin: 0;
+  color: #445249;
+}
+
+.maplibregl-popup-content {
+  padding: 10px 11px;
+  border-radius: 6px;
+  box-shadow: 0 6px 22px rgba(25, 40, 31, 0.18);
+}
+
+.gis-module-host > .assistant-layout {
+  height: 100%;
+  min-height: 0;
+  padding: 18px;
+  overflow: auto;
+}
+
+.stream-chat-panel {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 70px minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: #f7f7f5;
+}
+
+.stream-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 24px;
+  border-bottom: 1px solid #dfe3e0;
+  background: #ffffff;
+}
+
+.stream-chat-header h2 {
+  margin: 2px 0 0;
+  color: #2a362f;
+  font-size: 15px;
+}
+
+.stream-chat-header p {
+  margin: 3px 0 0;
+  color: #849089;
+  font-size: 9px;
+}
+
+.stream-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  color: #69766f;
+  border: 1px solid #dde3df;
+  border-radius: 999px;
+  background: #f6f8f6;
+  font-size: 9px;
+}
+
+.stream-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1b805e;
+}
+
+.stream-status i.busy {
+  background: #d38b33;
+  box-shadow: 0 0 0 4px rgba(211, 139, 51, 0.12);
+  animation: stream-status-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes stream-status-pulse {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.stream-chat-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b9c8c0 transparent;
+}
+
+.stream-conversation {
+  width: min(850px, calc(100% - 40px));
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 24px 0 30px;
+}
+
+.stream-message {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.stream-message.user {
+  width: min(680px, 88%);
+  margin-left: auto;
+  grid-template-columns: minmax(0, 1fr) 30px;
+}
+
+.stream-message.user .stream-avatar {
+  grid-column: 2;
+  grid-row: 1;
+  color: #2a6952;
+  background: #e4f0ea;
+}
+
+.stream-message.user .stream-message-body {
+  grid-column: 1;
+  grid-row: 1;
+  align-items: flex-end;
+}
+
+.stream-message.user .stream-message-meta {
+  justify-content: flex-end;
+}
+
+.stream-avatar {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: white;
+  border-radius: 7px;
+  background: #183d32;
+}
+
+.stream-message-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.stream-message-meta {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #859089;
+  font-size: 8px;
+}
+
+.stream-message-meta strong {
+  color: #56635c;
+  font-size: 9px;
+}
+
+.stream-message-content {
+  position: relative;
+  max-width: 100%;
+  padding: 11px 13px;
+  color: #3f4e46;
+  border: 1px solid #e0e5e1;
+  border-radius: 4px 11px 11px 11px;
+  background: #ffffff;
+  box-shadow: 0 3px 14px rgba(28, 46, 36, 0.045);
+  font-size: 11px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.stream-message.user .stream-message-content {
+  color: #234d3e;
+  border-color: #d3e3da;
+  border-radius: 11px 4px 11px 11px;
+  background: #e9f2ed;
+}
+
+.stream-message.error .stream-message-content {
+  color: #934535;
+  border-color: #edc9c1;
+  background: #fff3f0;
+}
+
+.stream-cursor {
+  width: 2px;
+  height: 1.1em;
+  display: inline-block;
+  margin-left: 3px;
+  vertical-align: -2px;
+  background: #1f7658;
+  animation: stream-cursor-blink 0.7s steps(1) infinite;
+}
+
+@keyframes stream-cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.stream-process-trace {
+  width: min(620px, 100%);
+  margin: 1px 0 8px;
+  overflow: hidden;
+  border: 1px solid #dde4df;
+  border-radius: 7px;
+  background: #f8faf8;
+}
+
+.stream-process-trace summary {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: #426153;
+  list-style: none;
+  font-size: 9px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.stream-process-trace summary::-webkit-details-marker {
+  display: none;
+}
+
+.stream-process-trace summary svg:last-child {
+  margin-left: auto;
+  transition: transform 0.18s ease;
+}
+
+.stream-process-trace details:not([open]) summary svg:last-child {
+  transform: rotate(-90deg);
+}
+
+.stream-process-list {
+  display: grid;
+  gap: 0;
+  padding: 0 10px 9px;
+}
+
+.stream-process-list > div {
+  display: grid;
+  grid-template-columns: 19px minmax(0, 1fr);
+  gap: 7px;
+  padding: 7px 0;
+  border-top: 1px solid #e7ebe8;
+}
+
+.process-state {
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  border-radius: 50%;
+  background: #8a9790;
+}
+
+.process-state.completed {
+  background: #238161;
+}
+
+.process-state.warning,
+.process-state.error {
+  background: #c27435;
+}
+
+.process-state.running {
+  background: #2f7197;
+  animation: stream-status-pulse 0.8s ease-in-out infinite alternate;
+}
+
+.stream-process-list b {
+  display: block;
+  color: #4b5951;
+  font-size: 9px;
+}
+
+.stream-process-list p {
+  margin: 2px 0 0;
+  color: #818c86;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.stream-pending {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 11px;
+  color: #7a8780;
+  border: 1px solid #e0e5e1;
+  border-radius: 4px 11px 11px 11px;
+  background: #ffffff;
+  font-size: 9px;
+}
+
+.stream-pending span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #28775b;
+  animation: stream-dot 0.8s ease-in-out infinite alternate;
+}
+
+.stream-pending span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.stream-pending span:nth-child(3) {
+  margin-right: 5px;
+  animation-delay: 0.32s;
+}
+
+@keyframes stream-dot {
+  to {
+    opacity: 0.28;
+    transform: translateY(-2px);
+  }
+}
+
+.stream-composer-area {
+  padding: 0 20px 10px;
+  border-top: 1px solid #e0e4e1;
+  background: rgba(247, 248, 246, 0.98);
+}
+
+.stream-quick-prompts {
+  width: min(850px, 100%);
+  display: flex;
+  gap: 6px;
+  margin: -13px auto 7px;
+  overflow-x: auto;
+}
+
+.stream-quick-prompts button {
+  min-height: 28px;
+  flex: 0 0 auto;
+  padding: 0 10px;
+  color: #526159;
+  border: 1px solid #dbe2dd;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(30, 45, 36, 0.05);
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.stream-quick-prompts button:hover:not(:disabled) {
+  color: #1d634a;
+  border-color: #afc9bb;
+  background: #f0f6f2;
+}
+
+.stream-quick-prompts button:disabled {
+  opacity: 0.55;
+}
+
+.stream-composer {
+  width: min(850px, 100%);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #d7ddd9;
+  border-radius: 9px;
+  background: #ffffff;
+  box-shadow: 0 7px 24px rgba(27, 43, 34, 0.07);
+}
+
+.stream-composer textarea {
+  width: 100%;
+  min-height: 54px;
+  display: block;
+  resize: none;
+  padding: 11px 13px 5px;
+  color: #34433b;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.stream-composer textarea::placeholder {
+  color: #9aa39e;
+}
+
+.stream-composer-toolbar {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px 6px;
+}
+
+.stream-model-selector {
+  height: 29px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 8px;
+  color: #647269;
+  border: 1px solid #e0e4e1;
+  border-radius: 5px;
+  background: #f6f8f6;
+}
+
+.stream-model-selector select {
+  width: min(210px, 28vw);
+  height: 27px;
+  padding: 0 22px 0 0;
+  color: #4e5b54;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 9px;
+}
+
+.stream-add-button,
+.stream-send-button {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 5px;
+}
+
+.stream-add-button {
+  color: #96a09a;
+  border: 1px solid #e2e6e3;
+  background: #f8f9f8;
+}
+
+.stream-input-hint {
+  margin-left: auto;
+  color: #a0a8a3;
+  font-size: 8px;
+}
+
+.stream-send-button {
+  color: white;
+  border: 0;
+  background: #183d32;
+  cursor: pointer;
+}
+
+.stream-send-button:hover:not(:disabled) {
+  background: #245345;
+}
+
+.stream-send-button:disabled {
+  color: #929a95;
+  background: #d6dbd8;
+  cursor: default;
+}
+
+.stream-composer-area > p {
+  margin: 5px auto 0;
+  color: #a0a8a3;
+  font-size: 7px;
+  text-align: center;
+}
+
+@media (max-width: 1280px) {
+  .gis-shell {
+    grid-template-columns: 224px minmax(0, 1fr);
+  }
+
+  .regeneration-workbench {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .gis-topbar-meta span:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .gis-shell {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .gis-brand {
+    justify-content: center;
+    padding-inline: 8px;
+  }
+
+  .gis-brand > div:last-child,
+  .gis-sidebar-scroll .primary-nav span,
+  .gis-sidebar-scroll .side-section,
+  .gis-sidebar-scroll .architecture-note,
+  .gis-sidebar-scroll .help-link,
+  .gis-sidebar-footer div {
+    display: none;
+  }
+
+  .gis-sidebar-scroll {
+    padding-inline: 8px;
+  }
+
+  .gis-sidebar-scroll .primary-nav button {
+    justify-content: center;
+    padding-inline: 6px;
+  }
+
+  .gis-sidebar-footer {
+    justify-content: center;
+    padding-inline: 8px;
+  }
+
+  .regeneration-workbench {
+    grid-template-columns: minmax(0, 1fr) 270px;
+  }
+
+  .gis-topbar-meta span:not(:first-child),
+  .map-title span,
+  .feature-count {
+    display: none;
+  }
+
+  .map-title {
+    min-width: 0;
+  }
+}

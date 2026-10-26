@@ -1,0 +1,49 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+frontend/node_modules/
+frontend/.npm-cache/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+config/model_local.py
+.env
+.venv/
+.conda/
+.conda_pkgs/
+
+# 大文件数据：业务输入与政策参考PDF不入库（可自行放置到本地对应目录）
+data/input/
+data/policies/*.pdf
+
+# 生成的报告成果
+outputs/
+
+# 汇报材料二进制文件（markdown 文档保留）
+docs/presentations/*.pptx
+docs/presentations/*.pdf
+docs/**/*.docx
+
+# 训练模型、SHAP图表与评估结果属于可再生成的大体积产物
+models/
+
+# 报告模板二进制文件不进入源码仓库
+templates/*.docx
+
+# 运行时自动生成的RAG索引（缺失时会自动重建）
+runtime/policy_rag/
+
+runtime/logs/*
+runtime/results/*
+runtime/exports/*
+runtime/uploads/*
+runtime/user_models.json
+runtime/user_models.json.tmp
+!runtime/logs/.gitkeep
+!runtime/results/.gitkeep
+!runtime/exports/.gitkeep
+!runtime/uploads/.gitkeep

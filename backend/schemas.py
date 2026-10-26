@@ -1,0 +1,248 @@
+from __future__ import annotations
+
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class ChatRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=2000)
+    model_id: str = Field(default="default", min_length=1, max_length=80)
+
+
+class ModelOption(BaseModel):
+    id: str
+    label: str
+    description: str
+    ready: bool
+    kind: Literal["local", "llm"]
+    base_url: str = ""
+
+
+class ArtifactSummary(BaseModel):
+    id: str
+    name: str
+    kind: Literal["dataset", "analysis", "landscape", "spatial", "geojson", "report", "pdf"]
+    mime: str
+    size: int
+    created_at: str
+
+
+class ArtifactDetail(ArtifactSummary):
+    preview: Any = None
+
+
+class ConstraintDatasetSummary(BaseModel):
+    loaded: bool = False
+    name: str | None = None
+    layer_count: int = 0
+    layers: list[str] = Field(default_factory=list)
+    uploaded_at: str | None = None
+    warnings: list[str] = Field(default_factory=list)
+
+
+class LandscapeBoundarySummary(BaseModel):
+    loaded: bool = False
+    name: str | None = None
+    source_crs: str | None = None
+    analysis_crs: str | None = None
+    source_geometry_type: str | None = None
+    source_feature_count: int = 0
+    patch_count: int = 0
+    area_km2: float = 0
+    warnings: list[str] = Field(default_factory=list)
+
+
+class PolicyDocumentSummary(BaseModel):
+    id: str
+    name: str
+    size: int
+    uploaded_at: str
+    text_length: int = 0
+    excerpt: str = ""
+    warning: str | None = None
+
+
+class WorkspaceSummary(BaseModel):
+    dataset_name: str
+    block_count: int
+    field_count: int
+    has_spatial_data: bool = False
+    dataset_warnings: list[str] = Field(default_factory=list)
+    constraint_dataset: ConstraintDatasetSummary = Field(default_factory=ConstraintDatasetSummary)
+    landscape_boundary: LandscapeBoundarySummary = Field(default_factory=LandscapeBoundarySummary)
+    policy_documents: list[PolicyDocumentSummary] = Field(default_factory=list)
+    model_diagnostics: dict[str, Any] = Field(default_factory=dict)
+    model_ready: bool
+    default_model_id: str
+    models: list[ModelOption] = Field(default_factory=list)
+    artifacts: list[ArtifactSummary] = Field(default_factory=list)
+
+
+class DatasetPayload(BaseModel):
+    name: str
+    warnings: list[str] = Field(default_factory=list)
+    block_count: int
+    matched_count: int
+    offset: int = 0
+    limit: int = 50
+    has_more: bool = False
+    blocks: list[dict[str, Any]]
+
+
+class CandidateParcelPayload(BaseModel):
+    available: bool = False
+    analysis_required: bool = False
+    count: int = 0
+    parcels: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class UserModelInput(BaseModel):
+    label: str = Field(min_length=1, max_length=40)
+    model: str = Field(min_length=1, max_length=80)
+    base_url: str = Field(min_length=1, max_length=200)
+    api_key: str = Field(min_length=1, max_length=300)
+
+    @field_validator("label", "model", "base_url", "api_key")
+    @classmethod
+    def _strip_nonempty(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("字段不能为空")
+        return value
+
+    @field_validator("base_url")
+    @classmethod
+    def _http_scheme(cls, value: str) -> str:
+        if not value.lower().startswith(("http://", "https://")):
+            raise ValueError("网址必须以 http:// 或 https:// 开头")
+        return value
+
+
+class UserModelOutput(BaseModel):
+    """回传给前端的模型信息，绝不包含完整 api_key。"""
+
+    id: str
+    label: str
+    model: str
+    base_url: str
+    created_at: str
+    api_key_masked: str
+
+
+class CreateUserModelResponse(BaseModel):
+    model: UserModelOutput
+    workspace: WorkspaceSummary
+
+
+class ReportGenerateRequest(BaseModel):
+    model_id: str = Field(default="default", min_length=1, max_length=80)
+
+
+class RegenerationAnalyzeRequest(BaseModel):
+    inefficiency_threshold: float = Field(default=60.0, ge=0, le=100)
+    potential_threshold: float = Field(default=50.0, ge=0, le=100)
+
+
+class LandscapeEvaluateRequest(BaseModel):
+    block_ids: list[str] = Field(default_factory=list)
+    block_actions: dict[str, Literal["include", "exclude"]] = Field(default_factory=dict)
+    action: Literal["include", "exclude", "auto"] = "auto"
+    neighborhood_m: float | None = Field(default=None, ge=200, le=5000)
+    cell_size_m: float | None = Field(default=None, ge=5, le=200)
+    connectivity: Literal[4, 8] | None = None
+    limit: int | None = Field(default=None, ge=1)
+
+
+class LandscapeScenarioEvaluateRequest(BaseModel):
+    block_ids: list[str] = Field(min_length=1)
+    action: Literal["include", "exclude"]
+    neighborhood_m: float | None = Field(default=None, ge=200, le=5000)
+    cell_size_m: float | None = Field(default=None, ge=5, le=200)
+    connectivity: Literal[4, 8] | None = None
+
+
+class RagPolicyDocumentSummary(BaseModel):
+    id: str
+    name: str
+    source: str
+    category: str = ""
+    suffix: str
+    size: int
+    text_length: int
+    excerpt: str = ""
+
+
+class RagPolicyDocumentDetail(RagPolicyDocumentSummary):
+    content: str
+
+
+class RagPolicySearchResult(BaseModel):
+    document_id: str | None = None
+    source: str
+    type: str
+    score: float
+    rule_id: str | None = None
+    article_ref: str | None = None
+    excerpt: str = ""
+
+
+class RagQuestionRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+    model_id: str = Field(default="local-rules", min_length=1, max_length=80)
+
+
+class RagQuestionResponse(BaseModel):
+    answer: str
+    mode: str
+    best_score: float = 0
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class PolicyFeasibilityRequest(BaseModel):
+    parcel: dict[str, Any]
+    model_id: str = Field(default="local-rules", min_length=1, max_length=80)
+
+
+class PolicyFeasibilityResponse(BaseModel):
+    tool_name: str
+    tool_version: str
+    parcel_id: str = ""
+    policy_analysis: dict[str, Any]
+    hard_constraint_analysis: dict[str, Any]
+    retrieval: dict[str, Any]
+    parcel_context: dict[str, Any] = Field(default_factory=dict)
+    answer: str
+
+
+class PolicyBatchValidationRequest(BaseModel):
+    test_cases: list[dict[str, Any]] = Field(min_length=1, max_length=50)
+    model_id: str = Field(default="local-rules", min_length=1, max_length=80)
+
+
+class PolicyBatchValidationResponse(BaseModel):
+    tool_name: str = "policy_feasibility_batch_validation"
+    tool_version: str = "3.10"
+    total: int
+    passed: int
+    pass_rate: float
+    gate_match_rate: float | None = None
+    evidence_valid_rate: float
+    input_valid_rate: float
+    results: list[dict[str, Any]] = Field(default_factory=list)
+    report: str
+
+
+class CandidatePolicyAnalysisRequest(BaseModel):
+    model_id: str = Field(default="local-rules", min_length=1, max_length=80)
+
+
+class CandidatePolicyAnalysisResponse(BaseModel):
+    total: int
+    completed: int
+    failed: int
+    results: list[dict[str, Any]] = Field(default_factory=list)
+    decisions: list[dict[str, Any]] = Field(default_factory=list)
+    report: str
+    spatial: dict[str, Any] | None = None
+    artifact: ArtifactSummary | None = None

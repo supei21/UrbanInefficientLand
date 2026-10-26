@@ -1,0 +1,29 @@
+name: TIANSHU
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - nodejs=22
+  - flask>=3.1
+  - pydantic>=2.7
+  - pyyaml
+  - pandas
+  - numpy=1.26
+  - scikit-learn
+  - xgboost=2.0.3
+  - pyshp
+  - dbfread
+  - geopandas
+  - pyogrio
+  - pyproj
+  - pillow
+  - pypdf
+  - python-docx
+  - docx2txt
+  - langchain
+  - langgraph
+  - langchain-openai
+  - langchain-community
+  - pytest
+  - ruff
+  - mypy

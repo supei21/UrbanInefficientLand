@@ -1,0 +1,107 @@
+project:
+  name: 低效空间再生：面向城市活力重塑的空间识别与场景策划
+  version: tianshu-1.0.0
+
+regeneration:
+  inefficiency_threshold: 60
+  potential_threshold: 50
+  inefficiency_weights:
+    activity_deficit: 0.35
+    function_deficit: 0.25
+    space_degradation: 0.20
+    accessibility_deficit: 0.20
+  potential_weights:
+    location_value: 0.30
+    market_support: 0.25
+    space_capacity: 0.25
+    implementation_feasibility: 0.20
+
+workflow:
+  max_retries: 2
+  require_human_approval: true
+
+thresholds:
+  primary_inclusion: 80
+  secondary_inclusion: 65
+  exclusion: 40
+  minimum_completeness: 0.60
+  minimum_confidence: 0.60
+
+weights:
+  traffic: 0.25
+  terrain: 0.10
+  infrastructure: 0.20
+  urban_form: 0.10
+  industry: 0.25
+  population: 0.05
+  landuse: 0.05
+
+dynamic_adaptation:
+  weights:
+    development_probability: 0.30
+    suitability: 0.40
+    planning_match: 0.30
+    constraint_penalty: 0.15
+  planning_neutral_score: 50
+  district_candidate_percentile: 0.20
+
+development_hotspot:
+  primary_percentile: 0.95
+  secondary_percentile: 0.80
+  exclusion_max_score: 0.40
+
+trained_model:
+  enabled: true
+  model_dir: "models/actual_adjustment_optimized"
+  min_feature_coverage: 0.50
+  probability_field: development_probability
+  class_names: ["未调整", "预测调入", "预测调出"]
+  primary_inclusion_probability: 0.05
+  secondary_inclusion_probability: 0.0025
+  exclusion_probability: 0.20
+  note: 使用SHAP筛选和组合特征优化的调入/调出双二分类XGBoost；运行阈值已按6721个街区的候选池规模校准，预计约110个调入、62个调出候选。
+
+landscape:
+  neighborhood_m: 1500
+  cell_size_m: 50
+  connectivity: 8
+  adjacency_tolerance_m: 300.0
+  stable_relative_threshold: 0.0005
+  significant_relative_threshold: 0.005
+  single_stable_pd_relative_threshold: 0.00005
+  single_significant_pd_relative_threshold: 0.001
+  stable_percentage_point_threshold: 0.01
+  significant_percentage_point_threshold: 0.1
+  single_stable_ai_percentage_point_threshold: 0.001
+  single_significant_ai_percentage_point_threshold: 0.02
+  significant_np_change: 2
+  note: 形态评价将调入调出地块实际作用于完整城镇开发边界，并统一计算NP、PD、LPI、ED、LSI和AI。
+
+scales:
+  road_density_high: 8.0
+  transport_poi_high: 20
+  public_poi_high: 30
+  industry_poi_high: 35
+  commercial_poi_high: 25
+  population_density_high: 10000
+  relief_high: 50
+
+hard_constraints:
+  ecological_redline: true
+  permanent_farmland: true
+  prohibited_disaster_zone: true
+
+policy_rag:
+  enabled: true
+  policy_dir: "data/policies"
+  index_path: "runtime/policy_rag/policy_index.json"
+  chroma_path: "runtime/policy_rag/chroma_db"
+  embedding_model: "BAAI/bge-small-zh-v1.5"
+  backend: "local"
+  retrieval_k: 6
+  chunk_size: 700
+  chunk_overlap: 150
+
+output:
+  language: zh-CN
+  save_audit_log: true
