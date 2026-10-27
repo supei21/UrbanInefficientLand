@@ -18,8 +18,6 @@
 
 若本机具有原始武汉 ArcGIS FeatureSet 和修正试算的 `low_efficiency_trial_data.json`，可运行 `scripts/prepare_wuhan_local.py <原始JSON> <修正试算JSON>`，只读这两份来源并在被 Git 忽略的 `data/input/Wuhan_block_llm.json` 生成 5254 个边界内地块的本地输入。评分在每次分析时重新计算，不读取旧成果中的预计算分数。
 
-独立导出 SHP 可运行 `python -m scripts.evaluate_low_efficiency_shp <街区数据.zip> <输出目录>`。脚本使用 ZIP 内已有的开发边界重叠率字段，筛选重叠率不少于 50% 的地块；不会自行叠加开发边界面图层，也不调用 Web 系统。输出全部参评、三级候选、高度与明显低效、无需人工复核候选四组 SHP，保留原始属性并增加 `EVIDENCE` 等评价字段。生成的成果位于被 Git 忽略的 `outputs/` 时不会进入仓库。
-
 ## 技术架构
 
 - 前端：Vue 3、TypeScript、Vite，按 `api / composables / modules / components` 分层。
