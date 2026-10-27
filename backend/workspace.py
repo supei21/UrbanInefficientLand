@@ -29,7 +29,7 @@ from report.report_service import generate_planning_policy_report
 from tianshu_core.config import load_config
 from tianshu_core.io import parse_json
 from tianshu_core.llm.client import get_default_model_id, list_model_options
-from tianshu_core.paths import EXPORTS_DIR, PROJECT_ROOT, SAMPLE_DATA_FILE
+from tianshu_core.paths import DEFAULT_WORKSPACE_DATA_FILE, EXPORTS_DIR, PROJECT_ROOT
 from tianshu_core.regeneration import analyze_regeneration
 from tianshu_core.regeneration_geojson import build_regeneration_point_geojson
 from tianshu_core.spatial import (
@@ -202,8 +202,12 @@ class DemoWorkspace:
     def __init__(self) -> None:
         self._lock = RLock()
         self._artifacts: dict[str, StoredArtifact] = {}
-        self.dataset_name = "武汉市 6721 个街区单元（内置演示）"
-        self.blocks = parse_json(SAMPLE_DATA_FILE.read_bytes())
+        self.dataset_name = (
+            "武汉市街区单元（本地数据）"
+            if DEFAULT_WORKSPACE_DATA_FILE.parent.name == "input"
+            else "内置示例 blocks.json"
+        )
+        self.blocks = parse_json(DEFAULT_WORKSPACE_DATA_FILE.read_bytes())
         self.spatial_dataset: SpatialDataset | None = None
         self.uploaded_path: Path | None = None
         self.constraint_path: Path | None = None
@@ -303,8 +307,12 @@ class DemoWorkspace:
             self._clear_constraint_input()
             self._clear_landscape_boundary()
             self._clear_policy_documents()
-            self.dataset_name = "内置示例 blocks.json"
-            self.blocks = parse_json(SAMPLE_DATA_FILE.read_bytes())
+            self.dataset_name = (
+                "武汉市街区单元（本地数据）"
+                if DEFAULT_WORKSPACE_DATA_FILE.parent.name == "input"
+                else "内置示例 blocks.json"
+            )
+            self.blocks = parse_json(DEFAULT_WORKSPACE_DATA_FILE.read_bytes())
             self.latest_analysis_payload = None
             self.latest_regeneration_payload = None
             self._artifacts.clear()
@@ -696,7 +704,6 @@ class DemoWorkspace:
 
     def run_regeneration_analysis(
         self,
-        inefficiency_threshold: float = 60.0,
         potential_threshold: float = 50.0,
     ) -> dict[str, Any]:
         """Run the competition workflow and persist JSON, GeoJSON and SHP results."""
@@ -705,7 +712,6 @@ class DemoWorkspace:
         with self._lock:
             payload = analyze_regeneration(
                 deepcopy(self.blocks),
-                inefficiency_threshold=inefficiency_threshold,
                 potential_threshold=potential_threshold,
             )
             compatibility_decisions = []

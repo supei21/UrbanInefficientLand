@@ -3,13 +3,15 @@ project:
   version: tianshu-1.0.0
 
 regeneration:
-  inefficiency_threshold: 60
+  # 六维低效评价公式及等级判定以 tianshu_core/low_efficiency.py 为准。
   potential_threshold: 50
   inefficiency_weights:
-    activity_deficit: 0.35
-    function_deficit: 0.25
-    space_degradation: 0.20
-    accessibility_deficit: 0.20
+    土地利用不足: 0.25
+    城市活力不足: 0.25
+    功能结构失配: 0.20
+    公共服务短板: 0.15
+    交通可达性不足: 0.10
+    空间品质问题: 0.05
   potential_weights:
     location_value: 0.30
     market_support: 0.25

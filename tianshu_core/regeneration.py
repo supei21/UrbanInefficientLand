@@ -11,12 +11,7 @@ from collections import Counter
 from collections.abc import Iterable
 from typing import Any
 
-INEFFICIENCY_WEIGHTS = {
-    "activity_deficit": 0.35,
-    "function_deficit": 0.25,
-    "space_degradation": 0.20,
-    "accessibility_deficit": 0.20,
-}
+from tianshu_core.low_efficiency import DIMENSION_WEIGHTS, evaluate_low_efficiency
 
 POTENTIAL_WEIGHTS = {
     "location_value": 0.30,
@@ -27,14 +22,19 @@ POTENTIAL_WEIGHTS = {
 
 
 FIELD_GROUPS: dict[str, tuple[str, ...]] = {
-    "poi_density": ("poi_density", "poi_density_per_km2", "poi_total"),
-    "commercial": ("poi_commercial", "commercial_poi", "commercial_density"),
+    "poi_density": ("poi_density", "poi_density_per_km2", "poi_densit"),
+    "commercial": ("poi_commercial", "commercial_poi", "commercial_density", "poi_commer"),
     "public_service": ("poi_public", "poi_public_service", "public_service_poi"),
-    "transport": ("poi_transport", "transport_poi", "transit_stop_count"),
-    "industry": ("poi_industry", "poi_industrial", "industrial_poi"),
-    "population_density": ("pop_density", "pop_density_per_km2", "population_density"),
-    "road_density": ("road_density", "road_density_km_per_km2"),
-    "built_ratio": ("built_area_ratio", "construction_ratio"),
+    "transport": ("poi_transport", "transport_poi", "transit_stop_count", "poi_transp"),
+    "industry": ("poi_industry", "poi_industrial", "industrial_poi", "poi_indust"),
+    "population_density": (
+        "pop_density",
+        "pop_density_per_km2",
+        "population_density",
+        "Pop_densit",
+    ),
+    "road_density": ("road_density", "road_density_km_per_km2", "road_densi"),
+    "built_ratio": ("Bulit_Area", "built_area_ratio", "construction_ratio"),
     "vacancy": ("vacancy_rate", "vacant_ratio", "idle_land_ratio"),
     "building_age": ("building_age", "average_building_age"),
     "green_ratio": ("green_ratio", "tree_cover_ratio", "forest_ratio"),
@@ -123,51 +123,40 @@ def _weighted(dimensions: dict[str, float], weights: dict[str, float]) -> float:
     return round(sum(dimensions[key] * weight for key, weight in weights.items()), 2)
 
 
-def _scenario(
-    inefficiency: float,
-    potential: float,
-    block: dict[str, Any],
-    inefficiency_threshold: float,
-    potential_threshold: float,
-) -> str:
-    hard_constraint = any(
+def _has_hard_constraint(block: dict[str, Any]) -> bool:
+    return any(
         block.get(field) is True
         for field in ("ecological_redline", "permanent_farmland", "prohibited_disaster_zone")
+    ) or any(
+        (_number(block, names) or 0.0) > 0.01
+        for names in (
+            ("ecological_overlap_ratio", "ecological_ratio", "eco_ratio"),
+            ("farmland_overlap_ratio", "farmland_ratio", "farm_ratio"),
+        )
     )
-    if hard_constraint:
+
+
+def _scenario(
+    inefficiency_level: str,
+    potential: float,
+    block: dict[str, Any],
+    potential_threshold: float,
+) -> str:
+    if _has_hard_constraint(block):
         return "生态修复"
-    if inefficiency >= inefficiency_threshold and potential >= potential_threshold:
+    clearly_inefficient = inefficiency_level in {"高度低效", "明显低效"}
+    if clearly_inefficient and potential >= potential_threshold:
         return "重点再生"
-    if inefficiency >= inefficiency_threshold:
+    if clearly_inefficient:
         return "渐进更新"
     if potential >= potential_threshold:
         return "活力培育"
     return "稳定提升"
 
 
-def _evidence(dimensions: dict[str, float], potential_dimensions: dict[str, float]) -> list[str]:
-    labels = {
-        "activity_deficit": "活力不足",
-        "function_deficit": "功能失配",
-        "space_degradation": "空间衰退",
-        "accessibility_deficit": "可达性短板",
-        "location_value": "区位可达",
-        "market_support": "市场支撑",
-        "space_capacity": "空间承载",
-        "implementation_feasibility": "实施可行",
-    }
-    weak = sorted(dimensions.items(), key=lambda item: -item[1])[:2]
-    strong = sorted(potential_dimensions.items(), key=lambda item: -item[1])[:2]
-    return [
-        *(f"{labels[key]} {value:.1f}" for key, value in weak),
-        *(f"{labels[key]} {value:.1f}" for key, value in strong),
-    ]
-
-
 def analyze_regeneration(
     blocks: list[dict[str, Any]],
     *,
-    inefficiency_threshold: float = 60.0,
     potential_threshold: float = 50.0,
 ) -> dict[str, Any]:
     """Analyze blocks and return explainable regeneration decisions and summary."""
@@ -175,73 +164,36 @@ def analyze_regeneration(
     if not blocks:
         raise ValueError("当前数据集没有可分析地块")
 
+    low_efficiency = evaluate_low_efficiency(blocks)
     normalized = {
-        "poi": _normalize(_series(blocks, "poi_density")),
         "commercial": _normalize(_series(blocks, "commercial")),
-        "public": _normalize(_series(blocks, "public_service")),
         "transport": _normalize(_series(blocks, "transport")),
         "industry": _normalize(_series(blocks, "industry")),
         "population": _normalize(_series(blocks, "population_density")),
         "road": _normalize(_series(blocks, "road_density")),
         "built": _normalize(_series(blocks, "built_ratio")),
         "vacancy": _normalize(_series(blocks, "vacancy")),
-        "age": _normalize(_series(blocks, "building_age")),
         "green": _normalize(_series(blocks, "green_ratio")),
-        "mix": _normalize(_series(blocks, "mixed_use")),
     }
 
     decisions: list[dict[str, Any]] = []
-    for index, block in enumerate(blocks):
-        activity_positive, activity_count = _mean_available(
-            [
-                normalized["poi"][index],
-                normalized["commercial"][index],
-                normalized["population"][index],
-            ]
-        )
-        vacancy, vacancy_count = _mean_available(
-            [normalized["vacancy"][index]], default=100 - activity_positive
-        )
-        activity_deficit = (100 - activity_positive) * 0.75 + vacancy * 0.25
-
-        function_positive, function_count = _mean_available(
-            [
-                normalized["commercial"][index],
-                normalized["public"][index],
-                normalized["industry"][index],
-                normalized["mix"][index],
-            ]
-        )
-        function_deficit = 100 - function_positive
-
-        space_positive, space_count = _mean_available(
-            [normalized["built"][index], normalized["green"][index]]
-        )
-        age, age_count = _mean_available([normalized["age"][index]], default=100 - space_positive)
-        space_degradation = (100 - space_positive) * 0.65 + age * 0.35
-
-        accessibility_positive, accessibility_count = _mean_available(
+    for low_result in low_efficiency:
+        index = low_result["source_index"]
+        block = blocks[index]
+        accessibility_positive, _ = _mean_available(
             [normalized["transport"][index], normalized["road"][index]]
         )
-        accessibility_deficit = 100 - accessibility_positive
-
-        inefficiency_dimensions = {
-            "activity_deficit": round(activity_deficit, 2),
-            "function_deficit": round(function_deficit, 2),
-            "space_degradation": round(space_degradation, 2),
-            "accessibility_deficit": round(accessibility_deficit, 2),
-        }
-        inefficiency = _weighted(inefficiency_dimensions, INEFFICIENCY_WEIGHTS)
+        inefficiency = low_result["inefficiency_score"]
 
         location_value = accessibility_positive
-        market_support, market_count = _mean_available(
+        market_support, _ = _mean_available(
             [
                 normalized["commercial"][index],
                 normalized["population"][index],
                 normalized["industry"][index],
             ]
         )
-        space_capacity, capacity_count = _mean_available(
+        space_capacity, _ = _mean_available(
             [
                 normalized["built"][index],
                 normalized["green"][index],
@@ -250,10 +202,7 @@ def analyze_regeneration(
                 else 100 - normalized["vacancy"][index],
             ]
         )
-        hard_constraint = any(
-            block.get(field) is True
-            for field in ("ecological_redline", "permanent_farmland", "prohibited_disaster_zone")
-        )
+        hard_constraint = _has_hard_constraint(block)
         disaster_risk = str(block.get("disaster_risk") or "").lower()
         feasibility = (
             15.0
@@ -270,10 +219,9 @@ def analyze_regeneration(
         }
         potential = _weighted(potential_dimensions, POTENTIAL_WEIGHTS)
         scenario_name = _scenario(
-            inefficiency,
+            low_result["inefficiency_level"],
             potential,
             block,
-            inefficiency_threshold,
             potential_threshold,
         )
         scenario = SCENARIOS[scenario_name]
@@ -284,17 +232,6 @@ def analyze_regeneration(
             + {"重点再生": 15, "渐进更新": 4, "活力培育": 2, "生态修复": 3}.get(scenario_name, 0),
             2,
         )
-        coverage_count = (
-            activity_count
-            + vacancy_count
-            + function_count
-            + space_count
-            + age_count
-            + accessibility_count
-            + market_count
-            + capacity_count
-        )
-        coverage = round(min(1.0, coverage_count / 18), 2)
         decisions.append(
             {
                 "block_id": str(block.get("block_id") or block.get("object_id") or index + 1),
@@ -310,11 +247,14 @@ def analyze_regeneration(
                 "scenario_actions": scenario["actions"],
                 "implementation_timing": scenario["timing"],
                 "scenario_color": scenario["color"],
-                "inefficiency_dimensions": inefficiency_dimensions,
+                "inefficiency_dimensions": low_result["inefficiency_dimensions"],
+                "inefficiency_level": low_result["inefficiency_level"],
+                "dominant_problem": low_result["dominant_problem"],
+                "screening_status": low_result["screening_status"],
                 "potential_dimensions": potential_dimensions,
-                "data_coverage": coverage,
-                "manual_review_required": coverage < 0.45,
-                "key_evidence": _evidence(inefficiency_dimensions, potential_dimensions),
+                "data_coverage": low_result["data_coverage"],
+                "manual_review_required": low_result["manual_review_required"],
+                "key_evidence": low_result["key_evidence"],
             }
         )
 
@@ -334,16 +274,23 @@ def analyze_regeneration(
         "type": "regeneration_analysis",
         "title": "低效空间识别与再生场景策划",
         "method": {
-            "inefficiency_threshold": inefficiency_threshold,
             "potential_threshold": potential_threshold,
-            "inefficiency_weights": INEFFICIENCY_WEIGHTS,
+            "inefficiency_weights": DIMENSION_WEIGHTS,
+            "inefficiency_method": "修正后的六维百分位秩评价（2026年建设用地占比）",
+            "inefficiency_levels": {
+                "高度低效": "得分≥65且至少3维≥60",
+                "明显低效": "得分≥60且至少2维≥60",
+                "疑似低效": "得分≥55且至少2维≥55",
+                "一般": "其余地块",
+            },
             "potential_weights": POTENTIAL_WEIGHTS,
-            "classification": "低效程度 × 再生潜力二维矩阵",
+            "classification": "六维低效等级与再生潜力；得分用于散点图展示",
         },
         "summary": {
             "total": len(decisions),
-            "candidate_count": sum(
-                item["inefficiency_score"] >= inefficiency_threshold for item in decisions
+            "candidate_count": sum(item["inefficiency_level"] != "一般" for item in decisions),
+            "inefficiency_level_counts": dict(
+                Counter(item["inefficiency_level"] for item in decisions)
             ),
             "priority_count": priority_counts.get("近期重点", 0),
             "manual_review_count": sum(item["manual_review_required"] for item in decisions),

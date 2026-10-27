@@ -58,12 +58,11 @@ export async function uploadPolicyDocuments(files: readonly File[]) {
   });
 }
 
-export const analyzeRegeneration = (inefficiency: number, potential: number) =>
+export const analyzeRegeneration = (potential: number) =>
   requestJson<RegenerationResult>("/regeneration/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      inefficiency_threshold: inefficiency,
       potential_threshold: potential,
     }),
   });

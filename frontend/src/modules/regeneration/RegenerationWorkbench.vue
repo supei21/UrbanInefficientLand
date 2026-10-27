@@ -27,7 +27,6 @@ const SCENARIO_COLORS: Record<string, string> = {
   生态修复: "#657153",
 };
 
-const inefficiency = ref(60);
 const potential = ref(50);
 const result = ref<RegenerationResult | null>(null);
 const selected = ref<RegenerationDecision | null>(null);
@@ -50,7 +49,7 @@ async function runAnalysis() {
   error.value = "";
   selected.value = null;
   try {
-    result.value = await analyzeRegeneration(inefficiency.value, potential.value);
+    result.value = await analyzeRegeneration(potential.value);
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : "分析失败";
   } finally {
@@ -104,7 +103,6 @@ function colorOf(name: string): string {
           <PriorityMatrix
             v-if="result"
             :decisions="result.decisions"
-            :inefficiency-threshold="inefficiency"
             :potential-threshold="potential"
           />
           <div v-else class="map-empty-message">运行分析后查看低效程度与再生潜力矩阵</div>
@@ -115,7 +113,7 @@ function colorOf(name: string): string {
           <span>点击右侧“运行再生分析”，在地图上生成五类再生场景</span>
         </div>
         <div v-if="busy" class="map-loading">
-          <i></i><strong>正在计算 6721 个空间单元</strong><span>生成低效识别与再生场景图层</span>
+          <i></i><strong>正在计算空间单元</strong><span>生成低效识别与再生场景图层</span>
         </div>
         <div v-if="view === 'map'" class="map-legend-panel">
           <span v-for="name in SCENARIOS.slice(1)" :key="name">
@@ -148,6 +146,7 @@ function colorOf(name: string): string {
                 <th>行政区</th>
                 <th>再生场景</th>
                 <th>低效程度</th>
+                <th>低效等级</th>
                 <th>再生潜力</th>
                 <th>优先级</th>
                 <th>实施时序</th>
@@ -173,6 +172,7 @@ function colorOf(name: string): string {
                   >{{ item.regeneration_scenario }}
                 </td>
                 <td>{{ item.inefficiency_score.toFixed(1) }}</td>
+                <td>{{ item.inefficiency_level }}</td>
                 <td>{{ item.regeneration_potential.toFixed(1) }}</td>
                 <td>{{ item.priority_score.toFixed(1) }}</td>
                 <td>{{ item.implementation_timing }}</td>
@@ -180,7 +180,7 @@ function colorOf(name: string): string {
             </tbody>
             <tbody v-else>
               <tr>
-                <td colspan="8" class="table-empty">运行分析后显示优先再生单元</td>
+                <td colspan="9" class="table-empty">运行分析后显示优先再生单元</td>
               </tr>
             </tbody>
           </table>
@@ -199,12 +199,7 @@ function colorOf(name: string): string {
       <div class="analysis-scroll">
         <section class="analysis-card parameter-card">
           <h3>识别参数</h3>
-          <label>
-            <span
-              >低效识别阈值 <b>{{ inefficiency }}</b></span
-            >
-            <input v-model.number="inefficiency" type="range" min="0" max="100" />
-          </label>
+          <p>低效评价采用固定六维权重与四级规则：高度低效、明显低效、疑似低效、一般。</p>
           <label>
             <span
               >再生潜力阈值 <b>{{ potential }}</b></span
@@ -243,6 +238,14 @@ function colorOf(name: string): string {
               ><i><em :style="{ width: `${result.summary.average_potential}%` }"></em></i>
             </div>
           </div>
+          <div v-if="result" class="scenario-summary-list">
+            <span
+              v-for="[name, count] in Object.entries(result.summary.inefficiency_level_counts)"
+              :key="name"
+            >
+              {{ name }}：{{ count }}
+            </span>
+          </div>
         </section>
 
         <section class="analysis-card">
@@ -269,6 +272,23 @@ function colorOf(name: string): string {
               }}</em>
             </div>
             <dl>
+              <div>
+                <dt>低效等级</dt>
+                <dd>
+                  {{ selected.inefficiency_level }}（{{ selected.inefficiency_score.toFixed(2) }}）
+                </dd>
+              </div>
+              <div>
+                <dt>主导问题</dt>
+                <dd>{{ selected.dominant_problem }}</dd>
+              </div>
+              <div
+                v-for="[name, score] in Object.entries(selected.inefficiency_dimensions)"
+                :key="name"
+              >
+                <dt>{{ name }}</dt>
+                <dd>{{ score.toFixed(2) }}</dd>
+              </div>
               <div>
                 <dt>场景定位</dt>
                 <dd>{{ selected.scenario_positioning }}</dd>

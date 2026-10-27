@@ -608,6 +608,27 @@ def build_analysis_geojson(
                     "ai_recommendation": decision.get("recommendation"),
                     "regeneration_scenario": decision.get("regeneration_scenario"),
                     "inefficiency_score": decision.get("inefficiency_score"),
+                    "inefficiency_level": decision.get("inefficiency_level"),
+                    "dominant_problem": decision.get("dominant_problem"),
+                    "screening_status": decision.get("screening_status"),
+                    "low_land_use": (decision.get("inefficiency_dimensions") or {}).get(
+                        "土地利用不足"
+                    ),
+                    "low_vitality": (decision.get("inefficiency_dimensions") or {}).get(
+                        "城市活力不足"
+                    ),
+                    "low_function": (decision.get("inefficiency_dimensions") or {}).get(
+                        "功能结构失配"
+                    ),
+                    "low_services": (decision.get("inefficiency_dimensions") or {}).get(
+                        "公共服务短板"
+                    ),
+                    "low_transport": (decision.get("inefficiency_dimensions") or {}).get(
+                        "交通可达性不足"
+                    ),
+                    "low_space": (decision.get("inefficiency_dimensions") or {}).get(
+                        "空间品质问题"
+                    ),
                     "regeneration_potential": decision.get("regeneration_potential"),
                     "regeneration_priority": decision.get("priority_score"),
                     "regeneration_priority_level": decision.get("priority_level"),
@@ -651,6 +672,32 @@ def export_candidate_shapefile(
     subset["AI_SCORE"] = subset["block_id"].map(
         lambda value: decision_map[str(value)].get("overall_suitability")
     )
+    if any("inefficiency_level" in decision for decision in decision_map.values()):
+        subset["LE_SCORE"] = subset["block_id"].map(
+            lambda value: decision_map[str(value)].get("inefficiency_score")
+        )
+        subset["LE_LEVEL"] = subset["block_id"].map(
+            lambda value: decision_map[str(value)].get("inefficiency_level")
+        )
+        subset["LE_MAIN"] = subset["block_id"].map(
+            lambda value: decision_map[str(value)].get("dominant_problem")
+        )
+        subset["LE_STATUS"] = subset["block_id"].map(
+            lambda value: decision_map[str(value)].get("screening_status")
+        )
+        for field, dimension in (
+            ("LE_LAND", "土地利用不足"),
+            ("LE_VITAL", "城市活力不足"),
+            ("LE_FUNC", "功能结构失配"),
+            ("LE_SERV", "公共服务短板"),
+            ("LE_TRANS", "交通可达性不足"),
+            ("LE_SPACE", "空间品质问题"),
+        ):
+            subset[field] = subset["block_id"].map(
+                lambda value, name=dimension: (
+                    decision_map[str(value)].get("inefficiency_dimensions") or {}
+                ).get(name)
+            )
     subset["AI_DYN"] = subset["block_id"].map(
         lambda value: decision_map[str(value)].get("dynamic_score")
     )

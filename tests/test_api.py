@@ -7,6 +7,7 @@ from flask_client import TestClient
 from test_spatial import make_shapefile_zip
 
 from backend.main import app, workspace
+from tianshu_core.io import parse_json
 from tianshu_core.models import BlockDecision
 from tianshu_core.paths import SAMPLE_DATA_FILE
 
@@ -60,7 +61,9 @@ class ApiTest(unittest.TestCase):
             files={"file": ("blocks.json", SAMPLE_DATA_FILE.read_bytes(), "application/json")},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["block_count"], self.expected_block_count)
+        self.assertEqual(
+            response.json()["block_count"], len(parse_json(SAMPLE_DATA_FILE.read_bytes()))
+        )
         self.assertEqual(response.json()["artifacts"][0]["kind"], "dataset")
 
     def test_upload_shapefile_zip_dataset(self):

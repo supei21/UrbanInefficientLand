@@ -5,7 +5,6 @@ import type { RegenerationDecision } from "../../types/domain";
 
 const props = defineProps<{
   decisions: RegenerationDecision[];
-  inefficiencyThreshold: number;
   potentialThreshold: number;
 }>();
 
@@ -37,13 +36,6 @@ const colors: Record<string, string> = {
         y2="326"
         class="threshold-line"
       />
-      <line
-        x1="42"
-        x2="532"
-        :y1="326 - inefficiencyThreshold * 2.75"
-        :y2="326 - inefficiencyThreshold * 2.75"
-        class="threshold-line"
-      />
       <circle
         v-for="point in points"
         :key="point.block_id"
@@ -53,13 +45,16 @@ const colors: Record<string, string> = {
         :fill="colors[point.regeneration_scenario] || '#718096'"
         fill-opacity="0.72"
       >
-        <title>{{ point.block_name || point.block_id }}：{{ point.regeneration_scenario }}</title>
+        <title>
+          {{ point.block_name || point.block_id }}：{{ point.inefficiency_level }}，{{
+            point.regeneration_scenario
+          }}
+        </title>
       </circle>
       <text x="287" y="352" text-anchor="middle">再生潜力 →</text>
       <text x="15" y="175" text-anchor="middle" transform="rotate(-90 15 175)">低效程度 →</text>
-      <text x="50" y="42" class="quadrant">低效显著</text>
-      <text x="445" y="42" class="quadrant strong">优先再生区</text>
     </svg>
+    <p>低效等级按六维得分及维度条件判定；纵轴分数仅用于展示。</p>
     <div class="legend">
       <span v-for="(color, label) in colors" :key="label"
         ><i :style="{ background: color }"></i>{{ label }}</span

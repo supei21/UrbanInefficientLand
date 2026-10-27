@@ -103,6 +103,8 @@ function popupContent(properties: GeoJsonProperties): HTMLElement {
   root.append(title, scenario);
   [
     ["低效程度", properties?.inefficiency_score],
+    ["低效等级", properties?.inefficiency_level],
+    ["主导问题", properties?.dominant_problem],
     ["再生潜力", properties?.regeneration_potential],
     ["优先级", properties?.priority_score],
     ["实施时序", properties?.implementation_timing],

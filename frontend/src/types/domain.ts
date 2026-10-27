@@ -98,6 +98,10 @@ export interface RegenerationDecision {
   regeneration_scenario: string;
   scenario_positioning: string;
   inefficiency_score: number;
+  inefficiency_level: string;
+  inefficiency_dimensions: Record<string, number>;
+  dominant_problem: string;
+  screening_status: string;
   regeneration_potential: number;
   priority_score: number;
   priority_level: string;
@@ -113,6 +117,7 @@ export interface RegenerationResult {
   summary: {
     total: number;
     candidate_count: number;
+    inefficiency_level_counts: Record<string, number>;
     priority_count: number;
     manual_review_count: number;
     average_inefficiency: number;
