@@ -19,6 +19,7 @@ config/model_local.py
 # 大文件数据：业务输入与政策参考PDF不入库（可自行放置到本地对应目录）
 data/input/
 data/policies/*.pdf
+data/policies/user_uploads/
 
 # 生成的报告成果
 outputs/

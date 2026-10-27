@@ -15,6 +15,60 @@ export interface ModelOption {
   description: string;
   ready: boolean;
   kind: "local" | "llm";
+  base_url?: string;
+}
+
+export interface UserModelInput {
+  label: string;
+  model: string;
+  base_url: string;
+  api_key: string;
+}
+
+export interface UserModelOutput {
+  id: string;
+  label: string;
+  model: string;
+  base_url: string;
+  created_at: string;
+  api_key_masked: string;
+}
+
+export interface CreateUserModelResponse {
+  model: UserModelOutput;
+  workspace: WorkspaceSummary;
+}
+
+export interface PolicyDocumentSummary {
+  id: string;
+  name: string;
+  source: string;
+  category: string;
+  suffix: string;
+  size: number;
+  text_length: number;
+  excerpt: string;
+}
+
+export interface PolicyDocumentDetail extends PolicyDocumentSummary {
+  content: string;
+}
+
+export interface PolicySearchResult {
+  document_id: string | null;
+  source: string;
+  type: string;
+  score: number;
+  rule_id?: string | null;
+  article_ref?: string | null;
+  excerpt: string;
+}
+
+export interface PolicyAnswer {
+  answer: string;
+  mode: string;
+  best_score: number;
+  sources: Record<string, unknown>[];
 }
 
 export interface WorkspaceSummary {

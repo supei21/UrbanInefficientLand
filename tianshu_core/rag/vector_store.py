@@ -37,6 +37,14 @@ def load_search_backend(settings: PolicyRagSettings) -> PolicySearchBackend:
     return backend
 
 
+def invalidate_search_cache(settings: PolicyRagSettings) -> None:
+    """Discard process-local policy indexes after the library changes."""
+
+    cache_key = _settings_cache_key(settings)
+    _INDEX_CACHE.pop(cache_key, None)
+    _SEARCH_CACHE.pop(cache_key, None)
+
+
 @dataclass
 class PolicySearchBackend:
     documents: list[dict[str, Any]]

@@ -42,6 +42,11 @@ def parse_body(model_type: type[ModelT]) -> ModelT:
 def as_jsonable(value: Any) -> Any:
     if isinstance(value, BaseModel):
         return value.model_dump(mode="json")
+    if isinstance(value, BaseException):
+        # Pydantic validator contexts can carry the original ValueError.
+        # Converting it here keeps expected 4xx responses JSON-safe instead
+        # of turning client input mistakes into an unrelated 500 response.
+        return str(value)
     if isinstance(value, dict):
         return {key: as_jsonable(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import {
+  ArrowUp,
   Bot,
   Check,
   ChevronDown,
   CircleAlert,
   Clock3,
+  Paperclip,
   Plus,
-  Send,
   Sparkles,
   UserRound,
 } from "lucide-vue-next";
@@ -14,6 +15,7 @@ import { computed, nextTick, ref, watch } from "vue";
 
 import { streamChat } from "../../api/workspace";
 import type { ChatPacket, ChatProcessEvent, WorkspaceSummary } from "../../types/domain";
+import ModelSettingsDialog from "./ModelSettingsDialog.vue";
 
 interface ChatMessage {
   id: string;
@@ -26,23 +28,22 @@ interface ChatMessage {
 }
 
 const props = defineProps<{ summary: WorkspaceSummary | null }>();
+const emit = defineEmits<{
+  prompt: [text: string];
+  workspaceChanged: [summary: WorkspaceSummary];
+}>();
 const draft = ref("");
 const busy = ref(false);
 const selectedModel = ref("");
+const modelDialogOpen = ref(false);
+const modelNotice = ref("");
 const conversation = ref<HTMLDivElement | null>(null);
-const messages = ref<ChatMessage[]>([
-  {
-    id: "welcome",
-    role: "assistant",
-    content:
-      "您好，我是城市低效空间再生智能助手。我可以读取当前空间单元数据，完成低效识别、再生潜力评估、场景策划和政策依据检索，并把分析过程实时展示给您。",
-  },
-]);
+const messages = ref<ChatMessage[]>([]);
 
 const quickPrompts = [
-  "分析当前数据中的低效空间，并说明最优先的更新片区",
-  "解释重点再生单元的主要驱动因素和风险",
-  "结合政策要求给出近期行动建议",
+  { title: "识别低效空间", detail: "找出最优先的更新片区" },
+  { title: "策划再生场景", detail: "生成差异化更新策略" },
+  { title: "形成行动建议", detail: "结合政策安排实施路径" },
 ];
 const modelId = computed(
   () => selectedModel.value || props.summary?.default_model_id || "local-rules",
@@ -50,6 +51,7 @@ const modelId = computed(
 const activeModel = computed(() =>
   props.summary?.models.find((model) => model.id === modelId.value),
 );
+const hasMessages = computed(() => messages.value.length > 0);
 
 function updateMessage(id: string, update: (message: ChatMessage) => ChatMessage) {
   messages.value = messages.value.map((message) => (message.id === id ? update(message) : message));
@@ -69,6 +71,7 @@ async function send(prompt = draft.value) {
   if (!query || busy.value || !props.summary?.block_count) return;
   draft.value = "";
   busy.value = true;
+  emit("prompt", query);
   const assistantId = crypto.randomUUID();
   messages.value.push(
     { id: crypto.randomUUID(), role: "user", content: query },
@@ -133,6 +136,19 @@ function onKeydown(event: KeyboardEvent) {
   }
 }
 
+function handleModelCreated(workspace: WorkspaceSummary, modelId: string) {
+  emit("workspaceChanged", workspace);
+  selectedModel.value = modelId;
+  modelDialogOpen.value = false;
+  modelNotice.value = "模型已添加并选中";
+}
+
+function handleModelRemoved(workspace: WorkspaceSummary, modelId: string) {
+  emit("workspaceChanged", workspace);
+  if (selectedModel.value === modelId) selectedModel.value = "";
+  modelNotice.value = "自定义模型已删除";
+}
+
 watch(
   messages,
   async () => {
@@ -144,35 +160,39 @@ watch(
 </script>
 
 <template>
-  <section class="stream-chat-panel">
+  <section :class="['stream-chat-panel', { empty: !hasMessages }]">
     <header class="stream-chat-header">
-      <div>
-        <span class="eyebrow">PLANNING COPILOT</span>
-        <h2>城市低效空间再生智能助手</h2>
-        <p>
-          {{ props.summary?.block_count ?? 0 }} 个空间单元已加载 ·
-          {{ activeModel?.label || "正在读取模型" }}
-        </p>
+      <div class="chat-header-title">
+        <span class="chat-agent-mark"><Sparkles :size="15" /></span>
+        <div>
+          <strong>城市再生智能体</strong>
+          <span>{{ activeModel?.label || "正在读取模型" }}</span>
+        </div>
       </div>
-      <div class="stream-status">
-        <i :class="{ busy }"></i>{{ busy ? "智能体执行中" : "等待任务" }}
-      </div>
+      <div class="stream-status"><i :class="{ busy }"></i>{{ busy ? "分析中" : "在线" }}</div>
     </header>
 
     <div ref="conversation" class="stream-chat-scroll">
-      <div class="stream-conversation">
+      <div v-if="!hasMessages" class="chat-welcome">
+        <div class="welcome-symbol"><Sparkles :size="24" /></div>
+        <p>天枢 · 城市更新智能体</p>
+        <h1>今天想从哪里开始？</h1>
+        <span>识别城市低效空间，评估再生潜力，并生成可解释的场景策划方案。</span>
+      </div>
+
+      <div v-else class="stream-conversation">
         <article
           v-for="message in messages"
           :key="message.id"
           :class="['stream-message', message.role, { error: message.error }]"
         >
           <div class="stream-avatar">
-            <UserRound v-if="message.role === 'user'" :size="16" />
-            <Bot v-else :size="16" />
+            <UserRound v-if="message.role === 'user'" :size="15" />
+            <Sparkles v-else :size="15" />
           </div>
           <div class="stream-message-body">
             <div class="stream-message-meta">
-              <strong>{{ message.role === "user" ? "你" : "再生规划智能体" }}</strong>
+              <strong>{{ message.role === "user" ? "你" : "天枢" }}</strong>
               <span v-if="message.modelName">{{ message.modelName }}</span>
             </div>
 
@@ -180,7 +200,7 @@ watch(
               <details open>
                 <summary>
                   <Sparkles :size="13" />
-                  <span>{{ message.pending ? "正在执行分析流程" : "分析过程" }}</span>
+                  <span>{{ message.pending ? "正在执行分析流程" : "已完成分析流程" }}</span>
                   <ChevronDown :size="13" />
                 </summary>
                 <div class="stream-process-list">
@@ -216,14 +236,19 @@ watch(
     </div>
 
     <footer class="stream-composer-area">
-      <div class="stream-quick-prompts">
+      <div v-if="modelNotice" class="model-notice" role="status">
+        {{ modelNotice }}
+        <button type="button" aria-label="关闭提示" @click="modelNotice = ''">×</button>
+      </div>
+      <div v-if="!hasMessages" class="stream-quick-prompts">
         <button
           v-for="prompt in quickPrompts"
-          :key="prompt"
+          :key="prompt.title"
           :disabled="busy || !props.summary?.block_count"
-          @click="send(prompt)"
+          @click="send(`${prompt.title}：${prompt.detail}`)"
         >
-          {{ prompt }}
+          <strong>{{ prompt.title }}</strong
+          ><span>{{ prompt.detail }}</span>
         </button>
       </div>
       <form class="stream-composer" @submit.prevent="send()">
@@ -234,13 +259,14 @@ watch(
           maxlength="2000"
           :disabled="busy || !props.summary?.block_count"
           :placeholder="
-            props.summary?.block_count
-              ? '询问低效空间、再生场景、政策依据或实施建议…'
-              : '请先加载空间数据'
+            props.summary?.block_count ? '描述你想分析的片区、目标与约束条件…' : '正在加载空间数据…'
           "
           @keydown="onKeydown"
         ></textarea>
         <div class="stream-composer-toolbar">
+          <button class="stream-add-button" type="button" disabled title="附件功能即将开放">
+            <Paperclip :size="17" />
+          </button>
           <label class="stream-model-selector">
             <Bot :size="14" />
             <select v-model="selectedModel" :disabled="busy" aria-label="选择模型">
@@ -255,16 +281,31 @@ watch(
               </option>
             </select>
           </label>
-          <button class="stream-add-button" type="button" disabled title="模型由配置文件统一管理">
-            <Plus :size="14" />
+          <button
+            class="stream-model-add-button"
+            type="button"
+            title="使用 API Key 添加大模型"
+            aria-label="添加大模型"
+            :disabled="busy"
+            @click="modelDialogOpen = true"
+          >
+            <Plus :size="16" />
           </button>
-          <span class="stream-input-hint">Enter 发送 · Shift+Enter 换行</span>
+          <span class="stream-input-hint">Enter 发送</span>
           <button class="stream-send-button" type="submit" :disabled="busy || !draft.trim()">
-            <Send :size="16" />
+            <ArrowUp :size="17" stroke-width="2.5" />
           </button>
         </div>
       </form>
-      <p>竞赛演示结果用于城市更新研究与方案比选，不替代法定规划审查。</p>
+      <p>内容由智能模型生成，重要规划结论请结合专业审查。</p>
     </footer>
+
+    <ModelSettingsDialog
+      v-if="modelDialogOpen"
+      :models="props.summary?.models ?? []"
+      @close="modelDialogOpen = false"
+      @created="handleModelCreated"
+      @removed="handleModelRemoved"
+    />
   </section>
 </template>

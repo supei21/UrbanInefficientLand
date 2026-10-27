@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import shutil
 import zipfile
+from pathlib import Path
+from uuid import uuid4
 
 from flask import Blueprint, request, send_file
 
@@ -19,6 +22,7 @@ from backend.uploads import UploadTooLargeError, persist_upload
 from tianshu_core.config import load_config
 from tianshu_core.llm.client import get_model_settings
 from tianshu_core.rag.config import settings_from_config as rag_settings_from_config
+from tianshu_core.rag.documents import read_policy_text
 from tianshu_core.rag.library import (
     get_policy_document,
     list_policy_library,
@@ -30,6 +34,7 @@ from tianshu_core.rag.policy_service import (
     answer_policy_question,
     validate_policy_feasibility_batch,
 )
+from tianshu_core.rag.vector_store import invalidate_search_cache
 
 policy_api = Blueprint("policy_api", __name__)
 
@@ -87,6 +92,44 @@ def preview_policy_reference_pdf():
 @policy_api.get("/rag/policies")
 def list_rag_policy_documents():
     return json_response(list_policy_library(_rag_settings()))
+
+
+@policy_api.post("/rag/policies/upload")
+def upload_rag_policy_documents():
+    files = request.files.getlist("files")
+    if not files or not any(file.filename for file in files):
+        raise ApiError(400, "请至少上传一个政策文件")
+
+    settings = _rag_settings()
+    upload_dir = settings.policy_dir / "user_uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    for file in files:
+        name = Path(file.filename or "policy-document").name
+        suffix = Path(name).suffix.lower()
+        if suffix not in {".docx", ".txt", ".pdf"}:
+            raise ApiError(400, "政策库文件支持DOCX、TXT或PDF")
+        temporary_path = None
+        target = None
+        try:
+            temporary_path, _size = persist_upload(file, name)
+            target = upload_dir / name
+            if target.exists():
+                target = upload_dir / f"{target.stem}_{uuid4().hex[:8]}{suffix}"
+            shutil.move(str(temporary_path), target)
+            if not read_policy_text(target).strip():
+                raise ValueError("未能从文件中提取政策文本")
+        except UploadTooLargeError as exc:
+            raise ApiError(413, str(exc)) from exc
+        except (OSError, ValueError, zipfile.BadZipFile) as exc:
+            if target is not None:
+                target.unlink(missing_ok=True)
+            raise ApiError(422, f"政策文件入库失败：{exc}") from exc
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+
+    invalidate_search_cache(settings)
+    return json_response(list_policy_library(settings))
 
 
 @policy_api.get("/rag/policies/<document_id>")

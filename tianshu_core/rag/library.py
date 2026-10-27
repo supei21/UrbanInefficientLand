@@ -16,7 +16,11 @@ def list_policy_library(settings: PolicyRagSettings) -> list[dict[str, Any]]:
         if not path.is_file() or path.suffix.lower() not in SUPPORTED_EXTENSIONS:
             continue
         source = str(path.relative_to(settings.policy_dir))
-        text = clean_text(read_policy_text(path))
+        # PDF extraction can take seconds for large planning documents.  The
+        # catalog only needs file metadata; defer full PDF parsing until the
+        # user opens the document or performs retrieval.
+        is_pdf = path.suffix.lower() == ".pdf"
+        text = "" if is_pdf else clean_text(read_policy_text(path))
         items.append(
             {
                 "id": encode_policy_id(source),
@@ -26,7 +30,9 @@ def list_policy_library(settings: PolicyRagSettings) -> list[dict[str, Any]]:
                 "suffix": path.suffix.lower(),
                 "size": path.stat().st_size,
                 "text_length": len(text),
-                "excerpt": make_excerpt(text),
+                "excerpt": (
+                    "PDF政策原文，选择文档后解析内容" if is_pdf else make_excerpt(text)
+                ),
             }
         )
     return items
