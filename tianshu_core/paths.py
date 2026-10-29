@@ -5,7 +5,11 @@ from pathlib import Path
 PACKAGE_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = PACKAGE_ROOT.parent
 CONFIG_FILE = PROJECT_ROOT / "config" / "analysis.yaml"
-SAMPLE_DATA_FILE = PROJECT_ROOT / "data" / "input" / "Wuhan_block_llm.json"
+FULL_DEMO_DATA_FILE = PROJECT_ROOT / "data" / "input" / "Wuhan_block_llm.json"
+SAMPLE_DATA_FILE = PROJECT_ROOT / "data" / "sample" / "blocks.json"
+DEFAULT_WORKSPACE_DATA_FILE = (
+    FULL_DEMO_DATA_FILE if FULL_DEMO_DATA_FILE.exists() else SAMPLE_DATA_FILE
+)
 RUNTIME_DIR = PROJECT_ROOT / "runtime"
 LOGS_DIR = RUNTIME_DIR / "logs"
 RESULTS_DIR = RUNTIME_DIR / "results"

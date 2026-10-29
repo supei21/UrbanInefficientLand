@@ -7,71 +7,60 @@ returns an explainable two-dimensional classification for every block.
 
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from collections import Counter
 from collections.abc import Iterable
 from typing import Any
 
-INEFFICIENCY_WEIGHTS = {
-    "activity_deficit": 0.35,
-    "function_deficit": 0.25,
-    "space_degradation": 0.20,
-    "accessibility_deficit": 0.20,
-}
+from tianshu_core.low_efficiency import DIMENSION_WEIGHTS, evaluate_low_efficiency
 
-POTENTIAL_WEIGHTS = {
-    "location_value": 0.30,
-    "market_support": 0.25,
-    "space_capacity": 0.25,
-    "implementation_feasibility": 0.20,
+CANDIDATE_LEVELS = ("高度低效", "明显低效")
+DEVELOPMENT_DIRECTIONS = {
+    "第二产业": ("sec_prob", "盘活低效产业载体", "导入先进制造与研发创新"),
+    "第三产业": ("ter_prob", "补充商业和社区服务", "完善教育医疗等公共服务"),
+    "交通": ("tra_prob", "改善站点衔接与慢行系统", "优化物流组织和节点空间"),
 }
-
-
-FIELD_GROUPS: dict[str, tuple[str, ...]] = {
-    "poi_density": ("poi_density", "poi_density_per_km2", "poi_total"),
-    "commercial": ("poi_commercial", "commercial_poi", "commercial_density"),
-    "public_service": ("poi_public", "poi_public_service", "public_service_poi"),
-    "transport": ("poi_transport", "transport_poi", "transit_stop_count"),
-    "industry": ("poi_industry", "poi_industrial", "industrial_poi"),
-    "population_density": ("pop_density", "pop_density_per_km2", "population_density"),
-    "road_density": ("road_density", "road_density_km_per_km2"),
-    "built_ratio": ("built_area_ratio", "construction_ratio"),
-    "vacancy": ("vacancy_rate", "vacant_ratio", "idle_land_ratio"),
-    "building_age": ("building_age", "average_building_age"),
-    "green_ratio": ("green_ratio", "tree_cover_ratio", "forest_ratio"),
-    "mixed_use": ("mixed_use_index", "land_use_mix", "functional_mix"),
-}
+POTENTIAL_LEVELS = ("低", "较低", "中", "较高", "高")
+COMPOSITE_DIRECTION_GAP = 0.05
 
 
 SCENARIOS = {
-    "重点再生": {
-        "positioning": "高低效、高潜力的优先启动区",
-        "actions": ["复合功能导入", "公共空间织补", "存量建筑适应性再利用", "慢行与公共交通接驳"],
+    "优先更新": {
+        "positioning": "高度低效、潜力较高的优先更新区",
+        "actions": ["盘活存量空间", "导入适宜功能", "完善公共服务", "改善交通衔接"],
         "timing": "近期启动（1—2年）",
         "color": "#e85d3f",
     },
-    "渐进更新": {
-        "positioning": "问题突出但实施条件有限的持续治理区",
-        "actions": ["安全隐患整治", "小微公共空间更新", "基础设施补短板", "低成本分期改造"],
+    "提质改善": {
+        "positioning": "明显低效、潜力较高的渐进改善区",
+        "actions": ["补充公共服务", "提升空间品质", "优化现有功能", "分期完善基础设施"],
         "timing": "分期推进（2—5年）",
         "color": "#f2a541",
     },
-    "活力培育": {
-        "positioning": "现状基础尚可、具备活力提升机会的培育区",
-        "actions": ["社区服务嵌入", "首层界面激活", "特色业态导入", "公共活动运营"],
-        "timing": "滚动实施（1—3年）",
-        "color": "#2e86ab",
+    "生态修复或储备": {
+        "positioning": "刚性约束修复或低潜力弹性储备区",
+        "actions": ["核验规划约束", "整治突出问题", "控制开发强度", "定期复评"],
+        "timing": "分类治理与动态复评",
+        "color": "#657153",
     },
-    "稳定提升": {
-        "positioning": "低低效、低潜力的品质维护与监测区",
-        "actions": ["常态化维护", "15分钟生活圈补缺", "低扰动环境改善", "年度活力监测"],
-        "timing": "持续维护",
+    "持续观察": {
+        "positioning": "明显低效、潜力较低的持续观察区",
+        "actions": ["维持必要维护", "补齐基础设施短板", "监测活力变化", "定期复评更新机会"],
+        "timing": "持续监测",
         "color": "#4f9d69",
     },
+}
+
+SCENARIO_SUBTYPES = {
     "生态修复": {
         "positioning": "受刚性约束影响的保护修复区",
         "actions": ["生态保育", "污染与风险治理", "建设活动退出", "蓝绿网络修复"],
         "timing": "约束优先、分类治理",
-        "color": "#657153",
+    },
+    "储备": {
+        "positioning": "高度低效、潜力较低的弹性储备区",
+        "actions": ["安全隐患整治", "控制开发强度", "保留远期更新弹性", "定期复评潜力"],
+        "timing": "中长期储备与动态复评",
     },
 }
 
@@ -88,86 +77,80 @@ def _number(block: dict[str, Any], names: Iterable[str]) -> float | None:
     return None
 
 
-def _series(blocks: list[dict[str, Any]], field_group: str) -> list[float | None]:
-    names = FIELD_GROUPS[field_group]
-    return [_number(block, names) for block in blocks]
+def _development_ranks(blocks: list[dict[str, Any]]) -> dict[str, list[float]]:
+    """Rank each XGBoost probability against every uploaded city block."""
+
+    ranks: dict[str, list[float]] = {}
+    for direction, (field, _, _) in DEVELOPMENT_DIRECTIONS.items():
+        values = [_number(block, (field,)) for block in blocks]
+        if any(value is None or not 0 <= value <= 1 for value in values):
+            raise ValueError(f"街区数据缺少完整有效的 {field}（{direction} XGBoost 概率）")
+        ordered = sorted(value for value in values if value is not None)
+        size = len(ordered)
+        ranks[direction] = [
+            (bisect_left(ordered, value) + bisect_right(ordered, value) - 1) / (2 * (size - 1))
+            if size > 1
+            else 0.5
+            for value in values
+            if value is not None
+        ]
+    return ranks
 
 
-def _normalize(values: list[float | None], *, inverse: bool = False) -> list[float | None]:
-    present = sorted(value for value in values if value is not None)
-    if not present:
-        return [None] * len(values)
-    low_index = max(0, int((len(present) - 1) * 0.05))
-    high_index = min(len(present) - 1, int((len(present) - 1) * 0.95))
-    low, high = present[low_index], present[high_index]
-    span = high - low
-    output: list[float | None] = []
-    for value in values:
-        if value is None:
-            output.append(None)
-            continue
-        score = 50.0 if span <= 1e-12 else (value - low) / span * 100
-        score = max(0.0, min(100.0, score))
-        output.append(round(100 - score if inverse else score, 2))
-    return output
+def _potential_level(score: float) -> str:
+    return POTENTIAL_LEVELS[min(int(score / 20), 4)]
 
 
-def _mean_available(values: Iterable[float | None], default: float = 50.0) -> tuple[float, int]:
-    present = [float(value) for value in values if value is not None]
-    if not present:
-        return default, 0
-    return sum(present) / len(present), len(present)
+def _development_actions(directions: list[str]) -> list[str]:
+    return [action for direction in directions for action in DEVELOPMENT_DIRECTIONS[direction][1:]]
 
 
-def _weighted(dimensions: dict[str, float], weights: dict[str, float]) -> float:
-    return round(sum(dimensions[key] * weight for key, weight in weights.items()), 2)
+def _hard_constraint_reasons(block: dict[str, Any]) -> list[str]:
+    reasons: list[str] = []
+    if (
+        block.get("ecological_redline") is True
+        or (_number(block, ("ecological_overlap_ratio", "ecological_ratio", "eco_ratio")) or 0.0)
+        > 0.01
+    ):
+        reasons.append("生态保护红线")
+    if (
+        block.get("permanent_farmland") is True
+        or (_number(block, ("farmland_overlap_ratio", "farmland_ratio", "farm_ratio")) or 0.0)
+        > 0.01
+    ):
+        reasons.append("永久基本农田")
+    if block.get("prohibited_disaster_zone") is True:
+        reasons.append("地质灾害禁止建设区")
+    return reasons
 
 
 def _scenario(
-    inefficiency: float,
+    inefficiency_level: str,
     potential: float,
-    block: dict[str, Any],
-    inefficiency_threshold: float,
+    constraint_reasons: list[str],
     potential_threshold: float,
-) -> str:
-    hard_constraint = any(
-        block.get(field) is True
-        for field in ("ecological_redline", "permanent_farmland", "prohibited_disaster_zone")
-    )
-    if hard_constraint:
-        return "生态修复"
-    if inefficiency >= inefficiency_threshold and potential >= potential_threshold:
-        return "重点再生"
-    if inefficiency >= inefficiency_threshold:
-        return "渐进更新"
-    if potential >= potential_threshold:
-        return "活力培育"
-    return "稳定提升"
-
-
-def _evidence(dimensions: dict[str, float], potential_dimensions: dict[str, float]) -> list[str]:
-    labels = {
-        "activity_deficit": "活力不足",
-        "function_deficit": "功能失配",
-        "space_degradation": "空间衰退",
-        "accessibility_deficit": "可达性短板",
-        "location_value": "区位可达",
-        "market_support": "市场支撑",
-        "space_capacity": "空间承载",
-        "implementation_feasibility": "实施可行",
-    }
-    weak = sorted(dimensions.items(), key=lambda item: -item[1])[:2]
-    strong = sorted(potential_dimensions.items(), key=lambda item: -item[1])[:2]
-    return [
-        *(f"{labels[key]} {value:.1f}" for key, value in weak),
-        *(f"{labels[key]} {value:.1f}" for key, value in strong),
-    ]
+) -> tuple[str, str | None, str]:
+    if inefficiency_level not in CANDIDATE_LEVELS:
+        raise ValueError("再生场景仅对高度低效和明显低效地块计算")
+    if constraint_reasons:
+        return (
+            "生态修复或储备",
+            "生态修复",
+            f"涉及{'、'.join(constraint_reasons)}，应优先开展约束核验与保护修复",
+        )
+    high_potential = potential >= potential_threshold
+    if inefficiency_level == "高度低效":
+        if high_potential:
+            return "优先更新", None, "高度低效且再生潜力达到阈值"
+        return "生态修复或储备", "储备", "高度低效但再生潜力低于阈值，保留远期更新弹性"
+    if high_potential:
+        return "提质改善", None, "明显低效且再生潜力达到阈值"
+    return "持续观察", None, "明显低效且再生潜力低于阈值，持续监测更新机会"
 
 
 def analyze_regeneration(
     blocks: list[dict[str, Any]],
     *,
-    inefficiency_threshold: float = 60.0,
     potential_threshold: float = 50.0,
 ) -> dict[str, Any]:
     """Analyze blocks and return explainable regeneration decisions and summary."""
@@ -175,146 +158,100 @@ def analyze_regeneration(
     if not blocks:
         raise ValueError("当前数据集没有可分析地块")
 
-    normalized = {
-        "poi": _normalize(_series(blocks, "poi_density")),
-        "commercial": _normalize(_series(blocks, "commercial")),
-        "public": _normalize(_series(blocks, "public_service")),
-        "transport": _normalize(_series(blocks, "transport")),
-        "industry": _normalize(_series(blocks, "industry")),
-        "population": _normalize(_series(blocks, "population_density")),
-        "road": _normalize(_series(blocks, "road_density")),
-        "built": _normalize(_series(blocks, "built_ratio")),
-        "vacancy": _normalize(_series(blocks, "vacancy")),
-        "age": _normalize(_series(blocks, "building_age")),
-        "green": _normalize(_series(blocks, "green_ratio")),
-        "mix": _normalize(_series(blocks, "mixed_use")),
-    }
+    low_efficiency = [
+        result
+        for result in evaluate_low_efficiency(blocks)
+        if result["inefficiency_level"] in CANDIDATE_LEVELS
+    ]
+    candidate_blocks = [blocks[result["source_index"]] for result in low_efficiency]
+    development_ranks = _development_ranks(blocks) if candidate_blocks else {}
 
     decisions: list[dict[str, Any]] = []
-    for index, block in enumerate(blocks):
-        activity_positive, activity_count = _mean_available(
-            [
-                normalized["poi"][index],
-                normalized["commercial"][index],
-                normalized["population"][index],
-            ]
-        )
-        vacancy, vacancy_count = _mean_available(
-            [normalized["vacancy"][index]], default=100 - activity_positive
-        )
-        activity_deficit = (100 - activity_positive) * 0.75 + vacancy * 0.25
-
-        function_positive, function_count = _mean_available(
-            [
-                normalized["commercial"][index],
-                normalized["public"][index],
-                normalized["industry"][index],
-                normalized["mix"][index],
-            ]
-        )
-        function_deficit = 100 - function_positive
-
-        space_positive, space_count = _mean_available(
-            [normalized["built"][index], normalized["green"][index]]
-        )
-        age, age_count = _mean_available([normalized["age"][index]], default=100 - space_positive)
-        space_degradation = (100 - space_positive) * 0.65 + age * 0.35
-
-        accessibility_positive, accessibility_count = _mean_available(
-            [normalized["transport"][index], normalized["road"][index]]
-        )
-        accessibility_deficit = 100 - accessibility_positive
-
-        inefficiency_dimensions = {
-            "activity_deficit": round(activity_deficit, 2),
-            "function_deficit": round(function_deficit, 2),
-            "space_degradation": round(space_degradation, 2),
-            "accessibility_deficit": round(accessibility_deficit, 2),
+    for index, low_result in enumerate(low_efficiency):
+        block = candidate_blocks[index]
+        source_index = low_result["source_index"]
+        inefficiency = low_result["inefficiency_score"]
+        direction_ranks = {
+            direction: values[source_index] for direction, values in development_ranks.items()
         }
-        inefficiency = _weighted(inefficiency_dimensions, INEFFICIENCY_WEIGHTS)
-
-        location_value = accessibility_positive
-        market_support, market_count = _mean_available(
-            [
-                normalized["commercial"][index],
-                normalized["population"][index],
-                normalized["industry"][index],
-            ]
+        best_rank = max(direction_ranks.values())
+        leading_directions = [
+            direction
+            for direction, value in direction_ranks.items()
+            if best_rank - value <= COMPOSITE_DIRECTION_GAP
+        ]
+        development_type = (
+            leading_directions[0]
+            if len(leading_directions) == 1
+            else "、".join(leading_directions) + "（复合）"
         )
-        space_capacity, capacity_count = _mean_available(
-            [
-                normalized["built"][index],
-                normalized["green"][index],
-                None
-                if normalized["vacancy"][index] is None
-                else 100 - normalized["vacancy"][index],
-            ]
-        )
-        hard_constraint = any(
-            block.get(field) is True
-            for field in ("ecological_redline", "permanent_farmland", "prohibited_disaster_zone")
-        )
-        disaster_risk = str(block.get("disaster_risk") or "").lower()
-        feasibility = (
-            15.0
-            if hard_constraint
-            else 45.0
-            if disaster_risk in {"高", "high", "禁止建设", "prohibited"}
-            else 85.0
-        )
-        potential_dimensions = {
-            "location_value": round(location_value, 2),
-            "market_support": round(market_support, 2),
-            "space_capacity": round(space_capacity, 2),
-            "implementation_feasibility": feasibility,
+        potential = round(best_rank * 100, 2)
+        potential_level = _potential_level(potential)
+        direction_actions = _development_actions(leading_directions)
+        direction_probabilities = {
+            direction: _number(block, (field,))
+            for direction, (field, _, _) in DEVELOPMENT_DIRECTIONS.items()
         }
-        potential = _weighted(potential_dimensions, POTENTIAL_WEIGHTS)
-        scenario_name = _scenario(
-            inefficiency,
+        constraint_reasons = _hard_constraint_reasons(block)
+        hard_constraint = bool(constraint_reasons)
+        scenario_name, scenario_subtype, scenario_reason = _scenario(
+            low_result["inefficiency_level"],
             potential,
-            block,
-            inefficiency_threshold,
+            constraint_reasons,
             potential_threshold,
         )
         scenario = SCENARIOS[scenario_name]
+        subtype_details = SCENARIO_SUBTYPES.get(scenario_subtype or "", {})
+        scenario_actions = list(subtype_details.get("actions", scenario["actions"]))
+        if not hard_constraint and potential >= potential_threshold:
+            scenario_actions.extend(direction_actions)
         priority_raw = round(
             inefficiency * 0.45
             + potential * 0.35
             + min(inefficiency, potential) * 0.20
-            + {"重点再生": 15, "渐进更新": 4, "活力培育": 2, "生态修复": 3}.get(scenario_name, 0),
+            + {"优先更新": 15, "提质改善": 4, "生态修复或储备": 3}.get(scenario_name, 0),
             2,
         )
-        coverage_count = (
-            activity_count
-            + vacancy_count
-            + function_count
-            + space_count
-            + age_count
-            + accessibility_count
-            + market_count
-            + capacity_count
-        )
-        coverage = round(min(1.0, coverage_count / 18), 2)
         decisions.append(
             {
-                "block_id": str(block.get("block_id") or block.get("object_id") or index + 1),
+                "block_id": str(
+                    block.get("block_id")
+                    or block.get("object_id")
+                    or low_result["source_index"] + 1
+                ),
                 "block_name": block.get("block_name") or block.get("district") or "未命名地块",
                 "district": block.get("district"),
                 "inefficiency_score": inefficiency,
                 "regeneration_potential": potential,
+                "dev_score": round(best_rank, 6),
+                "dev_type": development_type,
+                "development_directions": leading_directions,
+                "development_probabilities": direction_probabilities,
+                "development_ranks": {
+                    key: round(value, 6) for key, value in direction_ranks.items()
+                },
+                "potential_level": potential_level,
                 "priority_score": 0.0,
                 "priority_index_raw": priority_raw,
                 "priority_level": "待排序",
                 "regeneration_scenario": scenario_name,
-                "scenario_positioning": scenario["positioning"],
-                "scenario_actions": scenario["actions"],
-                "implementation_timing": scenario["timing"],
+                "scenario_subtype": scenario_subtype,
+                "scenario_reason": scenario_reason,
+                "constraint_reasons": constraint_reasons,
+                "scenario_positioning": subtype_details.get("positioning", scenario["positioning"]),
+                "scenario_actions": scenario_actions,
+                "implementation_timing": subtype_details.get("timing", scenario["timing"]),
                 "scenario_color": scenario["color"],
-                "inefficiency_dimensions": inefficiency_dimensions,
-                "potential_dimensions": potential_dimensions,
-                "data_coverage": coverage,
-                "manual_review_required": coverage < 0.45,
-                "key_evidence": _evidence(inefficiency_dimensions, potential_dimensions),
+                "inefficiency_dimensions": low_result["inefficiency_dimensions"],
+                "inefficiency_level": low_result["inefficiency_level"],
+                "dominant_problem": low_result["dominant_problem"],
+                "screening_status": low_result["screening_status"],
+                "potential_dimensions": {
+                    key: round(value * 100, 2) for key, value in direction_ranks.items()
+                },
+                "data_coverage": low_result["data_coverage"],
+                "manual_review_required": low_result["manual_review_required"] or hard_constraint,
+                "key_evidence": low_result["key_evidence"],
             }
         )
 
@@ -334,26 +271,40 @@ def analyze_regeneration(
         "type": "regeneration_analysis",
         "title": "低效空间识别与再生场景策划",
         "method": {
-            "inefficiency_threshold": inefficiency_threshold,
             "potential_threshold": potential_threshold,
-            "inefficiency_weights": INEFFICIENCY_WEIGHTS,
-            "potential_weights": POTENTIAL_WEIGHTS,
-            "classification": "低效程度 × 再生潜力二维矩阵",
+            "inefficiency_weights": DIMENSION_WEIGHTS,
+            "inefficiency_method": "修正后的六维百分位秩评价（2026年建设用地占比）",
+            "candidate_levels": list(CANDIDATE_LEVELS),
+            "inefficiency_levels": {
+                "高度低效": "得分≥65且至少3维≥60",
+                "明显低效": "得分≥60且至少2维≥60",
+            },
+            "potential_method": "三方向 XGBoost 概率分别换算为全市相对位次，取最高位次为 DEV_SCORE",
+            "potential_reference_count": len(blocks),
+            "potential_levels": list(POTENTIAL_LEVELS),
+            "composite_direction_gap": COMPOSITE_DIRECTION_GAP,
+            "classification": "高度/明显低效等级 × DEV_SCORE 高低；刚性约束优先校核",
         },
         "summary": {
             "total": len(decisions),
-            "candidate_count": sum(
-                item["inefficiency_score"] >= inefficiency_threshold for item in decisions
-            ),
+            "candidate_count": len(decisions),
+            "inefficiency_level_counts": {
+                level: sum(item["inefficiency_level"] == level for item in decisions)
+                for level in CANDIDATE_LEVELS
+            },
             "priority_count": priority_counts.get("近期重点", 0),
             "manual_review_count": sum(item["manual_review_required"] for item in decisions),
             "average_inefficiency": round(
                 sum(item["inefficiency_score"] for item in decisions) / len(decisions), 2
-            ),
+            )
+            if decisions
+            else 0.0,
             "average_potential": round(
                 sum(item["regeneration_potential"] for item in decisions) / len(decisions), 2
-            ),
-            "scenario_counts": dict(scenario_counts),
+            )
+            if decisions
+            else 0.0,
+            "scenario_counts": {name: scenario_counts.get(name, 0) for name in SCENARIOS},
             "priority_counts": dict(priority_counts),
         },
         "decisions": decisions,

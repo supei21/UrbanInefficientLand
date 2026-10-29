@@ -29,9 +29,9 @@ class RegenerationChatResult(BaseModel):
 def _help_answer(block_count: int) -> str:
     return (
         f"当前工作区已加载 {block_count} 个空间单元。系统围绕“低效程度 × 再生潜力”完成四类任务：\n\n"
-        "1. 低效识别：从活力、功能、空间品质和可达性四个维度计算低效程度，并保留数据覆盖率。\n"
-        "2. 潜力评估：综合区位价值、市场支撑、空间容量和实施可行性，形成再生潜力与优先级。\n"
-        "3. 场景策划：将空间单元归入重点再生、渐进更新、活力培育、稳定提升或生态修复，并给出行动建议和实施时序。\n"
+        "1. 低效识别：从土地利用、城市活力、功能结构、公共服务、交通可达性和空间品质六个维度计算低效程度，仅保留高度低效和明显低效地块。\n"
+        "2. 潜力评估：将已导入的第二产业、第三产业和交通 XGBoost 概率换算为全市相对位次，仅对保留地块输出最高位次、优势方向与潜力等级。\n"
+        "3. 场景策划：结合低效等级与潜力高低，归入优先更新、提质改善、生态修复或储备、持续观察，并优先校核刚性约束。\n"
         "4. 结果解释：可继续询问优先片区、主要驱动因素、风险、政策核验重点和单元详情。\n\n"
         "推荐流程：先在“再生分析”运行识别，再回到这里询问“最优先的更新片区有哪些”或“解释重点单元的驱动因素”。"
     )
@@ -85,7 +85,8 @@ def _analysis_answer(query: str, payload: dict[str, Any]) -> tuple[str, list[str
         lines.append(
             f"• {item.get('block_id')}（{item.get('district') or item.get('block_name') or '未命名'}）："
             f"{item.get('regeneration_scenario')}，低效 {item.get('inefficiency_score', 0):.1f}，"
-            f"潜力 {item.get('regeneration_potential', 0):.1f}，优先级 {item.get('priority_score', 0):.1f}。"
+            f"潜力 {item.get('regeneration_potential', 0):.1f}（{item.get('potential_level', '未分级')}），"
+            f"优势方向 {item.get('dev_type', '待判定')}，优先级 {item.get('priority_score', 0):.1f}。"
             f"主要依据：{evidence}；建议：{actions}。"
         )
 

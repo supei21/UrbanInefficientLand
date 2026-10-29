@@ -33,7 +33,6 @@ def run_regeneration_analysis():
     payload = parse_body(RegenerationAnalyzeRequest)
     try:
         result = workspace_service().run_regeneration_analysis(
-            inefficiency_threshold=payload.inefficiency_threshold,
             potential_threshold=payload.potential_threshold,
         )
     except ValueError as exc:

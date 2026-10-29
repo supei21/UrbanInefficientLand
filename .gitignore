@@ -39,6 +39,7 @@ templates/*.docx
 runtime/policy_rag/
 
 runtime/logs/*
+runtime/server.log
 runtime/results/*
 runtime/exports/*
 runtime/uploads/*

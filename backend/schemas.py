@@ -140,7 +140,6 @@ class ReportGenerateRequest(BaseModel):
 
 
 class RegenerationAnalyzeRequest(BaseModel):
-    inefficiency_threshold: float = Field(default=60.0, ge=0, le=100)
     potential_threshold: float = Field(default=50.0, ge=0, le=100)
 
 
