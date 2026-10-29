@@ -1,0 +1,176 @@
+{
+  "collection": "低效用地与城市更新政策库（演示版）",
+  "generated_on": "2026-10-29",
+  "count": 9,
+  "policies": [
+    {
+      "filename": "01_国家_深入推进城镇低效用地再开发的指导意见_试行.txt",
+      "title": "关于深入推进城镇低效用地再开发的指导意见（试行）",
+      "authority": "原国土资源部",
+      "document_number": "国土资发〔2016〕147号",
+      "issued_on": "2016-11-11",
+      "level": "国家",
+      "topics": [
+        "低效用地",
+        "再开发",
+        "节约集约用地",
+        "存量盘活"
+      ],
+      "url": "https://zrzyghj.huaihua.gov.cn/zrzyghj/c105377/201611/b5c5affa7af847aabad244278ecef09b.shtml",
+      "file": "01_国家_深入推进城镇低效用地再开发的指导意见_试行.txt",
+      "characters": 7314,
+      "status": "ok"
+    },
+    {
+      "filename": "02_国家_关于开展低效用地再开发试点工作的通知.txt",
+      "title": "自然资源部关于开展低效用地再开发试点工作的通知",
+      "authority": "自然资源部",
+      "document_number": "自然资发〔2023〕171号",
+      "issued_on": "2023-09-06",
+      "level": "国家",
+      "topics": [
+        "低效用地",
+        "试点",
+        "城中村",
+        "低效工业用地",
+        "规划统筹"
+      ],
+      "url": "https://tdzx.fuzhou.gov.cn/xxgk/zcfg/gjjfg/202309/t20230925_4684793.htm",
+      "file": "02_国家_关于开展低效用地再开发试点工作的通知.txt",
+      "characters": 4456,
+      "status": "ok"
+    },
+    {
+      "filename": "03_武汉_低效用地再开发试点工作实施方案.txt",
+      "title": "武汉市低效用地再开发试点工作实施方案",
+      "authority": "武汉市人民政府办公厅",
+      "document_number": "武政办〔2023〕121号",
+      "issued_on": "2023-12-31",
+      "level": "武汉市",
+      "topics": [
+        "低效用地",
+        "武汉",
+        "实施方案",
+        "城市更新",
+        "标图建库"
+      ],
+      "url": "https://www.wuhan.gov.cn/zwgk/xxgk/zfwj/bgtwj/202401/t20240105_2337614.shtml",
+      "file": "03_武汉_低效用地再开发试点工作实施方案.txt",
+      "characters": 6347,
+      "status": "ok"
+    },
+    {
+      "filename": "04_武汉_低效用地再开发试点工作实施方案_政策解读.txt",
+      "title": "《武汉市低效用地再开发试点工作实施方案》政策解读",
+      "authority": "武汉市自然资源和规划局",
+      "document_number": "政策解读",
+      "issued_on": "2024-01-06",
+      "level": "武汉市",
+      "topics": [
+        "低效用地",
+        "政策解读",
+        "试点范围",
+        "重点任务"
+      ],
+      "url": "https://www.wuhan.gov.cn/zwgk/xxgk/zcjd/bmjd/202401/t20240115_2341921.shtml",
+      "file": "04_武汉_低效用地再开发试点工作实施方案_政策解读.txt",
+      "characters": 1710,
+      "status": "ok"
+    },
+    {
+      "filename": "05_国家_关于持续推进城市更新行动的意见.txt",
+      "title": "中共中央办公厅 国务院办公厅关于持续推进城市更新行动的意见",
+      "authority": "中共中央办公厅、国务院办公厅",
+      "document_number": "中办发〔2025〕34号",
+      "issued_on": "2025-05-02",
+      "level": "国家",
+      "topics": [
+        "城市更新",
+        "低效用地",
+        "存量盘活",
+        "人居环境",
+        "韧性城市"
+      ],
+      "url": "https://www.mee.gov.cn/zcwj/zyygwj/202505/t20250516_1119546.shtml",
+      "file": "05_国家_关于持续推进城市更新行动的意见.txt",
+      "characters": 4569,
+      "status": "ok"
+    },
+    {
+      "filename": "06_武汉_城市更新条例.txt",
+      "title": "武汉市城市更新条例",
+      "authority": "武汉市人民代表大会常务委员会",
+      "document_number": "地方性法规",
+      "issued_on": "2026-03-31",
+      "level": "武汉市",
+      "topics": [
+        "城市更新",
+        "低效用地",
+        "规划",
+        "组织实施",
+        "保障措施"
+      ],
+      "url": "https://zgj.wuhan.gov.cn/ztzl/wgshcsgx/zcwj_csgx/202605/t20260518_2765726.shtml",
+      "file": "06_武汉_城市更新条例.txt",
+      "characters": 8356,
+      "status": "ok"
+    },
+    {
+      "filename": "07_湖北_关于支持城市更新行动的若干措施.txt",
+      "title": "关于支持城市更新行动的若干措施",
+      "authority": "湖北省自然资源厅、湖北省住房和城乡建设厅",
+      "document_number": "鄂自然资发〔2026〕16号",
+      "issued_on": "2026-08-27",
+      "level": "湖北省",
+      "topics": [
+        "城市更新",
+        "低效产业用地",
+        "混合利用",
+        "用途转换",
+        "存量盘活"
+      ],
+      "url": "https://zrzyt.hubei.gov.cn/fbjd/zhengce/qtzdgkwj/202608/t20260827_6002154.shtml",
+      "file": "07_湖北_关于支持城市更新行动的若干措施.txt",
+      "characters": 5760,
+      "status": "ok"
+    },
+    {
+      "filename": "08_湖北_低效用地认定标准_试行.txt",
+      "title": "湖北省低效用地认定标准（试行）",
+      "authority": "湖北省自然资源厅",
+      "document_number": "有效文件",
+      "issued_on": "2026-10-13",
+      "level": "湖北省",
+      "topics": [
+        "低效用地",
+        "认定标准",
+        "调查评价",
+        "分类识别"
+      ],
+      "url": "https://zrzyt.hubei.gov.cn/fbjd/zhengce/qtzdgkwj/202610/t20261020_6036520.shtml",
+      "file": "08_湖北_低效用地认定标准_试行.txt",
+      "characters": 1611,
+      "status": "ok"
+    },
+    {
+      "filename": "09_武汉_城市更新项目建设用地混合开发利用实施意见_试行.txt",
+      "title": "关于支持城市更新项目建设用地混合开发利用的实施意见（试行）",
+      "authority": "武汉市自然资源和城乡建设局",
+      "document_number": "实施意见（试行）",
+      "issued_on": "2026-04-22",
+      "level": "武汉市",
+      "topics": [
+        "城市更新",
+        "混合开发",
+        "复合利用",
+        "空间配置",
+        "用地兼容"
+      ],
+      "url": "https://zrzyhcxjs.wuhan.gov.cn/ztzl/yhyshj/yhyshj_zcsd/202608/t20260824_2838035.shtml",
+      "file": "09_武汉_城市更新项目建设用地混合开发利用实施意见_试行.txt",
+      "characters": 2593,
+      "status": "ok"
+    }
+  ],
+  "errors": []
+}
