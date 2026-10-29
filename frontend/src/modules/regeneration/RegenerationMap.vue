@@ -19,16 +19,14 @@ let fitted = false;
 const COLORS = [
   "match",
   ["coalesce", ["get", "regeneration_scenario"], ["get", "ai_decision"], ["get", "decision"]],
-  "重点再生",
+  "优先更新",
   "#e85d3f",
-  "渐进更新",
+  "提质改善",
   "#f2a541",
-  "活力培育",
-  "#2e86ab",
-  "稳定提升",
-  "#4f9d69",
-  "生态修复",
+  "生态修复或储备",
   "#657153",
+  "持续观察",
+  "#4f9d69",
   "#718096",
 ] as maplibregl.ExpressionSpecification;
 
@@ -72,6 +70,24 @@ function extendGeometry(bounds: LngLatBounds, geometry: Geometry | null): void {
   extendBounds(bounds, geometry.coordinates);
 }
 
+function visibleMarkers(): FeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: visibleData().features.flatMap((feature) => {
+      if (!feature.geometry || feature.geometry.type === "Point") return [];
+      const bounds = new LngLatBounds();
+      extendGeometry(bounds, feature.geometry);
+      if (bounds.isEmpty()) return [];
+      const center = bounds.getCenter();
+      return [{
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [center.lng, center.lat] },
+        properties: feature.properties,
+      }];
+    }),
+  };
+}
+
 function fitData(data: FeatureCollection): void {
   if (!map || !data.features.length) return;
   const bounds = new LngLatBounds();
@@ -82,9 +98,10 @@ function fitData(data: FeatureCollection): void {
 }
 
 function updateSource(): void {
-  if (!map?.isStyleLoaded()) return;
+  if (!map?.getSource("regeneration")) return;
   const data = visibleData();
   (map.getSource("regeneration") as GeoJSONSource | undefined)?.setData(data);
+  (map.getSource("regeneration-markers") as GeoJSONSource | undefined)?.setData(visibleMarkers());
   if (!fitted && props.data?.features.length) fitData(props.data);
 }
 
@@ -105,7 +122,10 @@ function popupContent(properties: GeoJsonProperties): HTMLElement {
     ["低效程度", properties?.inefficiency_score],
     ["低效等级", properties?.inefficiency_level],
     ["主导问题", properties?.dominant_problem],
-    ["再生潜力", properties?.regeneration_potential],
+    ["发展潜力", properties?.regeneration_potential],
+    ["潜力等级", properties?.potential_level],
+    ["优势方向", properties?.dev_type],
+    ["分类依据", properties?.scenario_reason],
     ["优先级", properties?.priority_score],
     ["实施时序", properties?.implementation_timing],
   ].forEach(([label, value]) => {
@@ -170,6 +190,7 @@ onMounted(() => {
   map.on("load", () => {
     if (!map) return;
     map.addSource("regeneration", { type: "geojson", data: visibleData() });
+    map.addSource("regeneration-markers", { type: "geojson", data: visibleMarkers() });
     map.addLayer({
       id: "regeneration-fill",
       type: "fill",
@@ -197,8 +218,22 @@ onMounted(() => {
         "circle-stroke-width": 0.7,
       },
     });
+    map.addLayer({
+      id: "regeneration-markers",
+      type: "circle",
+      source: "regeneration-markers",
+      maxzoom: 11,
+      paint: {
+        "circle-color": COLORS,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 3, 10, 5],
+        "circle-opacity": 0.9,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 0.8,
+      },
+    });
     bindLayerInteraction("regeneration-fill");
     bindLayerInteraction("regeneration-points");
+    bindLayerInteraction("regeneration-markers");
     updateSource();
   });
 });

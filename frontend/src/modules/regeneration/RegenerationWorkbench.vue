@@ -18,13 +18,12 @@ import type { RegenerationDecision, RegenerationResult } from "../../types/domai
 import PriorityMatrix from "./PriorityMatrix.vue";
 import RegenerationMap from "./RegenerationMap.vue";
 
-const SCENARIOS = ["全部", "重点再生", "渐进更新", "活力培育", "稳定提升", "生态修复"];
+const SCENARIOS = ["全部", "优先更新", "提质改善", "生态修复或储备", "持续观察"];
 const SCENARIO_COLORS: Record<string, string> = {
-  重点再生: "#e85d3f",
-  渐进更新: "#f2a541",
-  活力培育: "#2e86ab",
-  稳定提升: "#4f9d69",
-  生态修复: "#657153",
+  优先更新: "#e85d3f",
+  提质改善: "#f2a541",
+  生态修复或储备: "#657153",
+  持续观察: "#4f9d69",
 };
 
 const potential = ref(50);
@@ -37,7 +36,11 @@ const view = ref<"map" | "matrix">("map");
 const tableOpen = ref(true);
 
 const topDecisions = computed(() => result.value?.decisions.slice(0, 50) ?? []);
-const scenarioRows = computed(() => Object.entries(result.value?.summary.scenario_counts ?? {}));
+const scenarioRows = computed(() =>
+  result.value
+    ? SCENARIOS.slice(1).map((name) => [name, result.value?.summary.scenario_counts[name] ?? 0] as const)
+    : [],
+);
 const visibleCount = computed(() => {
   if (!result.value) return 0;
   if (scenario.value === "全部") return result.value.summary.total;
@@ -48,6 +51,7 @@ async function runAnalysis() {
   busy.value = true;
   error.value = "";
   selected.value = null;
+  scenario.value = "全部";
   try {
     result.value = await analyzeRegeneration(potential.value);
   } catch (reason) {
@@ -73,7 +77,7 @@ function colorOf(name: string): string {
       <header class="map-toolbar">
         <div class="map-title">
           <Map :size="17" />
-          <div><strong>武汉市低效空间再生场景图</strong><span>低效程度 × 再生潜力</span></div>
+          <div><strong>武汉市低效空间再生场景图</strong><span>低效等级 × 三方向发展潜力</span></div>
         </div>
         <div class="map-view-toggle" role="tablist" aria-label="分析视图">
           <button :class="{ active: view === 'map' }" @click="view = 'map'">
@@ -110,7 +114,12 @@ function colorOf(name: string): string {
         <div v-if="!result && view === 'map'" class="map-empty-overlay">
           <LocateFixed :size="28" />
           <strong>空间数据已就绪</strong>
-          <span>点击右侧“运行再生分析”，在地图上生成五类再生场景</span>
+          <span>点击右侧“运行再生分析”，查看高度低效和明显低效地块</span>
+        </div>
+        <div v-if="result && result.summary.total === 0" class="map-empty-overlay">
+          <LocateFixed :size="28" />
+          <strong>未识别到高度低效或明显低效地块</strong>
+          <span>当前数据没有进入后续潜力评价的地块</span>
         </div>
         <div v-if="busy" class="map-loading">
           <i></i><strong>正在计算空间单元</strong><span>生成低效识别与再生场景图层</span>
@@ -147,7 +156,8 @@ function colorOf(name: string): string {
                 <th>再生场景</th>
                 <th>低效程度</th>
                 <th>低效等级</th>
-                <th>再生潜力</th>
+                <th>发展潜力</th>
+                <th>优势方向</th>
                 <th>优先级</th>
                 <th>实施时序</th>
               </tr>
@@ -173,14 +183,17 @@ function colorOf(name: string): string {
                 </td>
                 <td>{{ item.inefficiency_score.toFixed(1) }}</td>
                 <td>{{ item.inefficiency_level }}</td>
-                <td>{{ item.regeneration_potential.toFixed(1) }}</td>
+                <td>{{ item.regeneration_potential.toFixed(1) }}（{{ item.potential_level }}）</td>
+                <td>{{ item.dev_type }}</td>
                 <td>{{ item.priority_score.toFixed(1) }}</td>
                 <td>{{ item.implementation_timing }}</td>
               </tr>
             </tbody>
             <tbody v-else>
               <tr>
-                <td colspan="9" class="table-empty">运行分析后显示优先再生单元</td>
+                <td colspan="10" class="table-empty">
+                  {{ result ? "当前没有符合条件的低效地块" : "运行分析后显示优先再生单元" }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -199,10 +212,10 @@ function colorOf(name: string): string {
       <div class="analysis-scroll">
         <section class="analysis-card parameter-card">
           <h3>识别参数</h3>
-          <p>低效评价采用固定六维权重与四级规则：高度低效、明显低效、疑似低效、一般。</p>
+          <p>六维规则识别低效等级；对高度低效和明显低效地块，依据三方向 XGBoost 概率的全市相对位次划分场景。</p>
           <label>
             <span
-              >再生潜力阈值 <b>{{ potential }}</b></span
+              >高潜力阈值 <b>{{ potential }}</b></span
             >
             <input v-model.number="potential" type="range" min="0" max="100" />
           </label>
@@ -216,10 +229,10 @@ function colorOf(name: string): string {
           <h3>分析概览</h3>
           <div class="summary-grid">
             <div>
-              <span>分析单元</span><strong>{{ result?.summary.total ?? "—" }}</strong>
+              <span>参与场景评价</span><strong>{{ result?.summary.total ?? "—" }}</strong>
             </div>
             <div>
-              <span>低效候选</span><strong>{{ result?.summary.candidate_count ?? "—" }}</strong>
+              <span>高度或明显低效</span><strong>{{ result?.summary.candidate_count ?? "—" }}</strong>
             </div>
             <div>
               <span>近期重点</span><strong>{{ result?.summary.priority_count ?? "—" }}</strong>
@@ -234,7 +247,7 @@ function colorOf(name: string): string {
               ><i><em :style="{ width: `${result.summary.average_inefficiency}%` }"></em></i>
             </div>
             <div>
-              <span>平均再生潜力</span><b>{{ result.summary.average_potential }}</b
+              <span>平均发展潜力</span><b>{{ result.summary.average_potential }}</b
               ><i><em :style="{ width: `${result.summary.average_potential}%` }"></em></i>
             </div>
           </div>
@@ -256,7 +269,7 @@ function colorOf(name: string): string {
               ><strong>{{ count }}</strong>
             </button>
           </div>
-          <p v-else class="analysis-empty">运行分析后显示五类再生场景统计。</p>
+          <p v-else class="analysis-empty">运行分析后显示再生场景统计。</p>
         </section>
 
         <section class="analysis-card selection-card">
@@ -292,6 +305,26 @@ function colorOf(name: string): string {
               <div>
                 <dt>场景定位</dt>
                 <dd>{{ selected.scenario_positioning }}</dd>
+              </div>
+              <div>
+                <dt>潜力等级</dt>
+                <dd>{{ selected.potential_level }}（{{ selected.regeneration_potential.toFixed(2) }}）</dd>
+              </div>
+              <div>
+                <dt>优势方向</dt>
+                <dd>{{ selected.dev_type }}</dd>
+              </div>
+              <div>
+                <dt>分类依据</dt>
+                <dd>{{ selected.scenario_reason }}</dd>
+              </div>
+              <div v-if="selected.scenario_subtype">
+                <dt>修复／储备</dt>
+                <dd>{{ selected.scenario_subtype }}</dd>
+              </div>
+              <div v-if="selected.constraint_reasons.length">
+                <dt>刚性约束</dt>
+                <dd>{{ selected.constraint_reasons.join("、") }}</dd>
               </div>
               <div>
                 <dt>优先等级</dt>

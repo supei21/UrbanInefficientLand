@@ -738,7 +738,9 @@ class DemoWorkspace:
                 "selected_block_ids": [item["block_id"] for item in compatibility_decisions],
             }
             if self.spatial_dataset is not None:
-                preview["spatial"] = build_analysis_geojson(self.spatial_dataset, preview)
+                preview["spatial"] = build_analysis_geojson(
+                    self.spatial_dataset, preview, selected_only=True
+                )
             else:
                 preview["spatial"] = build_regeneration_point_geojson(
                     self.blocks, compatibility_decisions
@@ -860,7 +862,11 @@ class DemoWorkspace:
         if self.latest_analysis_payload is None:
             raise ValueError("缺少候选地块分析结果")
         spatial_geojson = (
-            build_analysis_geojson(self.spatial_dataset, self.latest_analysis_payload)
+            build_analysis_geojson(
+                self.spatial_dataset,
+                self.latest_analysis_payload,
+                selected_only=self.latest_analysis_payload.get("type") == "regeneration_analysis",
+            )
             if self.spatial_dataset is not None
             else None
         )

@@ -96,6 +96,9 @@ export interface RegenerationDecision {
   block_name?: string;
   district?: string;
   regeneration_scenario: string;
+  scenario_subtype: string | null;
+  scenario_reason: string;
+  constraint_reasons: string[];
   scenario_positioning: string;
   inefficiency_score: number;
   inefficiency_level: string;
@@ -103,6 +106,12 @@ export interface RegenerationDecision {
   dominant_problem: string;
   screening_status: string;
   regeneration_potential: number;
+  potential_level: string;
+  dev_score: number;
+  dev_type: string;
+  development_directions: string[];
+  development_probabilities: Record<string, number>;
+  development_ranks: Record<string, number>;
   priority_score: number;
   priority_level: string;
   data_coverage: number;

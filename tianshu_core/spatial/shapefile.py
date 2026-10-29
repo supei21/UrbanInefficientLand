@@ -513,6 +513,8 @@ def build_analysis_geojson(
     dataset: SpatialDataset,
     payload: dict[str, Any] | None = None,
     max_features: int = MAP_PREVIEW_FEATURES,
+    *,
+    selected_only: bool = False,
 ) -> dict[str, Any]:
     payload = payload or {}
     selected_ids = {str(value) for value in payload.get("selected_block_ids", [])}
@@ -523,9 +525,11 @@ def build_analysis_geojson(
     }
     priority_ids = selected_ids | set(decisions)
     ids = dataset.original["block_id"].astype(str)
-    priority = dataset.original[ids.isin(priority_ids)].head(max_features)
-    remaining = max(max_features - len(priority), 0)
+    selected_frame = dataset.original[ids.isin(priority_ids)]
+    priority = selected_frame.head(max_features)
+    remaining = 0 if selected_only else max(max_features - len(priority), 0)
     background = dataset.original[~ids.isin(priority_ids)].head(remaining)
+    total_features = len(selected_frame) if selected_only else len(dataset.original)
     preview_frame = gpd.GeoDataFrame(
         pd.concat([priority, background], ignore_index=True),
         geometry=dataset.original.geometry.name,
@@ -549,7 +553,7 @@ def build_analysis_geojson(
             and (
                 decision.get("decision") in ADJUSTMENT_DECISIONS
                 or decision.get("regeneration_scenario")
-                in {"重点再生", "渐进更新", "活力培育", "生态修复"}
+                in {"优先更新", "提质改善", "生态修复或储备", "持续观察"}
             )
         )
         display_decision = decision.get("decision") if decision else None
@@ -630,6 +634,12 @@ def build_analysis_geojson(
                         "空间品质问题"
                     ),
                     "regeneration_potential": decision.get("regeneration_potential"),
+                    "potential_level": decision.get("potential_level"),
+                    "dev_score": decision.get("dev_score"),
+                    "dev_type": decision.get("dev_type"),
+                    "scenario_subtype": decision.get("scenario_subtype"),
+                    "scenario_reason": decision.get("scenario_reason"),
+                    "constraint_reasons": "、".join(decision.get("constraint_reasons") or []),
                     "regeneration_priority": decision.get("priority_score"),
                     "regeneration_priority_level": decision.get("priority_level"),
                     "regeneration_actions": "；".join(decision.get("scenario_actions") or []),
@@ -639,9 +649,9 @@ def build_analysis_geojson(
                 }
             )
     feature_collection["metadata"] = {
-        "total_features": len(dataset.original),
+        "total_features": total_features,
         "displayed_features": len(preview_frame),
-        "truncated": len(preview_frame) < len(dataset.original),
+        "truncated": len(preview_frame) < total_features,
         "simplify_meters": MAP_SIMPLIFY_METERS,
     }
     return feature_collection
@@ -685,6 +695,11 @@ def export_candidate_shapefile(
         subset["LE_STATUS"] = subset["block_id"].map(
             lambda value: decision_map[str(value)].get("screening_status")
         )
+        subset["EVIDENCE"] = subset["block_id"].map(
+            lambda value: _dbf_text(
+                "；".join(decision_map[str(value)].get("key_evidence") or []), 250
+            )
+        )
         for field, dimension in (
             ("LE_LAND", "土地利用不足"),
             ("LE_VITAL", "城市活力不足"),
@@ -696,6 +711,37 @@ def export_candidate_shapefile(
             subset[field] = subset["block_id"].map(
                 lambda value, name=dimension: (
                     decision_map[str(value)].get("inefficiency_dimensions") or {}
+                ).get(name)
+            )
+    if any("dev_score" in decision for decision in decision_map.values()):
+        subset["development_potential"] = subset["block_id"].map(
+            lambda value: decision_map[str(value)].get("dev_score")
+        )
+        subset["DEV_TYPE"] = subset["block_id"].map(
+            lambda value: _dbf_text(decision_map[str(value)].get("dev_type"), 80)
+        )
+        subset["DEV_LVL"] = subset["block_id"].map(
+            lambda value: decision_map[str(value)].get("potential_level")
+        )
+        subset["SC_SUB"] = subset["block_id"].map(
+            lambda value: decision_map[str(value)].get("scenario_subtype") or ""
+        )
+        subset["SC_REASON"] = subset["block_id"].map(
+            lambda value: _dbf_text(decision_map[str(value)].get("scenario_reason"), 250)
+        )
+        subset["CONSTR"] = subset["block_id"].map(
+            lambda value: _dbf_text(
+                "、".join(decision_map[str(value)].get("constraint_reasons") or []), 250
+            )
+        )
+        for field, direction in (
+            ("SEC_RANK", "第二产业"),
+            ("TER_RANK", "第三产业"),
+            ("TRA_RANK", "交通"),
+        ):
+            subset[field] = subset["block_id"].map(
+                lambda value, name=direction: (
+                    decision_map[str(value)].get("development_ranks") or {}
                 ).get(name)
             )
     subset["AI_DYN"] = subset["block_id"].map(

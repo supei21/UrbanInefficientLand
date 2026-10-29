@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path
 
 import geopandas as gpd
+import shapefile
 from shapely.geometry import GeometryCollection, LineString, box
 
 from tianshu_core.spatial import (
@@ -166,6 +167,18 @@ class SpatialDatasetTest(unittest.TestCase):
         self.assertEqual(candidate["properties"]["ai_rank_city"], 1)
         self.assertEqual(candidate["properties"]["ai_policy_compliance"], "符合")
 
+        selected_geojson = build_analysis_geojson(dataset, payload, selected_only=True)
+        self.assertEqual(
+            [feature["properties"]["block_id"] for feature in selected_geojson["features"]],
+            ["TEST_001"],
+        )
+        self.assertEqual(selected_geojson["metadata"]["total_features"], 1)
+        self.assertFalse(selected_geojson["metadata"]["truncated"])
+
+        empty_geojson = build_analysis_geojson(dataset, selected_only=True)
+        self.assertEqual(empty_geojson["features"], [])
+        self.assertEqual(empty_geojson["metadata"]["displayed_features"], 0)
+
         exported = export_candidate_shapefile(dataset, [decision])
         self.assertIsNotNone(exported)
         name, content = exported or ("", b"")
@@ -180,6 +193,39 @@ class SpatialDatasetTest(unittest.TestCase):
             archive.writestr("readme.txt", "not spatial")
         with self.assertRaisesRegex(ValueError, "未找到"):
             read_shapefile_zip("invalid.zip", buffer.getvalue())
+
+    def test_regeneration_shapefile_preserves_explanation(self):
+        dataset = read_shapefile_zip("blocks.shp.zip", make_shapefile_zip())
+        self.addCleanup(dataset.close)
+        decision = {
+            "block_id": "TEST_001",
+            "decision": "优先更新",
+            "regeneration_scenario": "优先更新",
+            "inefficiency_level": "高度低效",
+            "inefficiency_score": 70.0,
+            "key_evidence": ["土地利用不足 70.0"],
+            "dev_score": 0.95,
+            "dev_type": "第二产业",
+            "potential_level": "高",
+            "scenario_reason": "高度低效且发展潜力高",
+            "development_ranks": {"第二产业": 0.95, "第三产业": 0.5, "交通": 0.4},
+        }
+        exported = export_candidate_shapefile(dataset, [decision], decision_types={"优先更新"})
+        self.assertIsNotNone(exported)
+        _, content = exported or ("", b"")
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            stem = "candidate_adjustment_blocks"
+            reader = shapefile.Reader(
+                shp=io.BytesIO(archive.read(f"{stem}.shp")),
+                shx=io.BytesIO(archive.read(f"{stem}.shx")),
+                dbf=io.BytesIO(archive.read(f"{stem}.dbf")),
+                encoding="utf-8",
+            )
+            self.assertEqual(len(reader), 1)
+            fields = [field[0] for field in reader.fields[1:]]
+            record = reader.record(0)
+            self.assertEqual(record[fields.index("EVIDENCE")], "土地利用不足 70.0")
+            self.assertEqual(record[fields.index("DEV_TYPE")], "第二产业")
 
 
 if __name__ == "__main__":
